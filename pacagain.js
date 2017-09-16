@@ -12,6 +12,8 @@ var FPS=30;
 var HALF_STEP=STEP/2;
 var WIDTH=25;
 var HEIGHT=26;
+var REAL_WIDTH=STEP*WIDTH;
+var REAL_HEIGHT=STEP*HEIGHT;
 
 //directions
 var RIGHT = 0;
@@ -63,7 +65,7 @@ var LEVELS = [LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5, LEVEL6];
 //global attributes
 var currentLevel = LEVELS[0];
 var currentLevelNumber = 1;
-var player = { x: 0, y: 0, speed: 2, direction: 0, color: "#FF0", lifes: 3, GHOST_STUCKED: false, state: PLAYER_MOVING, size: 1 };
+var player = { x: 0, y: 0, speed: 1, direction: 0, color: "#FF0", lifes: 3, GHOST_STUCKED: false, state: PLAYER_MOVING, size: 1 };
 var overlay = {};
 var playing = true;
 var pills = [];
@@ -73,6 +75,10 @@ var gameInterval = undefined;
 var cycle=0;
 var scene = SCENE_INTRO;
 
+//TODO: extra life
+var extraLife = { collected: true, gx: 0, gy: 0};
+
+var touch = { x: 0, y:0 }
 
 window.onload = function(){    
 
@@ -85,27 +91,21 @@ window.onload = function(){
     SOUNDS.bg2.addEventListener('ended', replay, false);
 
     var canvas = document.getElementById("canvas");        
-
-    var STEP_WIDTH = Math.floor((window.innerWidth / WIDTH) - ((window.innerWidth / WIDTH) % 4));
-    var STEP_HEIGHT = Math.floor((window.innerHeight / HEIGHT) - ((window.innerHeight / HEIGHT) % 4));
-
-    if(STEP_HEIGHT > STEP_WIDTH){
-        STEP = STEP_WIDTH;                
+        
+    var scale = 1;
+    var scaleX = window.innerWidth / (WIDTH * STEP);
+    var scaleY = window.innerHeight / (HEIGHT * STEP);
+    if(scaleX < scaleY){
+        scale = scaleX;
     }else{
-        STEP = STEP_HEIGHT;
-    }  
+        scale = scaleY;
+    }
 
-    if(STEP < 16){
-        STEP = 16;
-    }  
+    canvas.width = WIDTH * STEP * scale;
+    canvas.height = HEIGHT * STEP * scale;    
 
-    HALF_STEP = STEP / 2;
-
-    canvas.width = WIDTH * STEP;
-    canvas.height = HEIGHT * STEP;    
-
-    var ctx = canvas.getContext("2d");  
-    ctx.save();  
+    var ctx = canvas.getContext("2d");    
+    ctx.scale(scale,scale);
 
     document.getElementById("pause").onclick = function(){
         togglePausePlay(ctx);
@@ -117,22 +117,59 @@ window.onload = function(){
 
     document.onkeydown = keyDown;
 
+    document.body.addEventListener('touchstart', function(e){
+        continueOnKeyOrTouch();
+        touch.x = e.changedTouches[0].pageX;
+        touch.y = e.changedTouches[0].pageY;
+    }, false)
+
+    document.body.addEventListener('touchend', function(e){        
+        var dx = e.changedTouches[0].pageX - touch.x;
+        var dy = e.changedTouches[0].pageY - touch.y;
+        if (dx*dx > dy*dy){
+            if(dx > 0){
+                lastKeyDirection = RIGHT;
+            }else{
+                lastKeyDirection = LEFT;
+            }
+        }else{
+            if(dy > 0){
+                lastKeyDirection = DOWN;
+            }else{
+                lastKeyDirection = UP;
+            }
+        }
+    }, false);
+
     resetOverlay();
-
     resetPills();    
-
-    resetEnemies();    
-    
+    resetEnemies();
     resetPlayer();    
 
-    gameInterval = setInterval(game, 1000/FPS, ctx);     
+    gameInterval = setInterval(game, 33, ctx);   
+
+    /*
+    var loops = 0, skipTicks = 1000 / FPS,
+        maxFrameSkip = 10,
+        nextGameTick = (new Date).getTime(),
+        lastGameTick;
+
+    while ((new Date).getTime() >= nextGameTick && loops < maxFrameSkip) {
+        game(ctx);
+        nextGameTick += skipTicks;
+        loops++;
+        console.log(loops);
+    }
+
+    console.log(loops);
+    */
 }
 
 function resetOverlay(){
     overlay = { 
-        x: canvas.width/2,
-        y: canvas.height/2,
-        size : canvas.width * 1,
+        x: REAL_WIDTH/2,
+        y: REAL_HEIGHT/2,
+        size : REAL_WIDTH * 1,
         opacity: 0
     };
 }
@@ -156,8 +193,8 @@ function resetPills(){
 }
 
 function game(ctx){ 
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.clearRect(0, 0, REAL_WIDTH, REAL_HEIGHT);
     
     ctx.globalCompositeOperation='source-over';    
 
@@ -173,13 +210,13 @@ function game(ctx){
             SOUNDS.bg1.play();
         }                
          
-        drawBackground(ctx);              
-        drawPacman(ctx, canvas.width / 2, canvas.height / 3, STEP * 4);
-        displayText(ctx, "PAC-AGAIN", canvas.width / 2, canvas.height / 2 + STEP * 2, STEP * 3);                
-        displayText(ctx, "by Rafael Odon", canvas.width / 2, canvas.height / 2 + STEP * 5, STEP * 0.75 )
+        drawBackground(ctx);
+        drawPacman(ctx, REAL_WIDTH / 2, REAL_HEIGHT / 3, STEP * 4);
+        displayText(ctx, "PAC-AGAIN", REAL_WIDTH / 2, REAL_HEIGHT / 2 + STEP * 2, STEP * 3);                
+        displayText(ctx, "by Rafael Odon", REAL_WIDTH / 2, REAL_HEIGHT / 2 + STEP * 5, STEP * 0.75 )
 
         if(cycle % 30 < 15){
-            displayText(ctx, "PRESS ANY KEY...", canvas.width / 2, canvas.height - STEP * 4, STEP);        
+            displayText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - STEP * 4, STEP);        
         }       
          
 
@@ -192,12 +229,12 @@ function game(ctx){
 
         clearCanvas(ctx);         
         displayDarkOverlay(ctx);                       
-        displayText(ctx, "LEVEL "+currentLevelNumber+" of "+LEVELS.length, canvas.width / 2, canvas.height / 4, STEP * 1.5 )
-        displayText(ctx, "LIFES x "+player.lifes, canvas.width / 2, canvas.height / 3, STEP * 1.5 )
-        drawGhost(ctx, canvas.width / 2, canvas.height / 5 * 3, 5, currentLevel.enemies[currentLevel.enemies.length - 1].color);
+        displayText(ctx, "LEVEL "+currentLevelNumber+" of "+LEVELS.length, REAL_WIDTH / 2, REAL_HEIGHT / 4, STEP * 1.5 )
+        displayText(ctx, "LIFE x "+player.lifes, REAL_WIDTH / 2, REAL_HEIGHT / 3, STEP * 1.5, "red" )
+        drawGhost(ctx, REAL_WIDTH / 2, REAL_HEIGHT / 5 * 3, 5, currentLevel.enemies[currentLevel.enemies.length - 1].color);
 
         if(cycle % 30 < 15){
-            displayText(ctx, "PRESS ANY KEY...", canvas.width / 2, canvas.height - STEP * 4, STEP);        
+            displayText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - STEP * 4, STEP);        
         }
 
     }else if(scene == SCENE_GAME){
@@ -214,7 +251,13 @@ function game(ctx){
         displayText(ctx, "LEVEL "+currentLevelNumber+" of "+LEVELS.length+
             "        LIFES: "+player.lifes+
             "        PILLS: "+pillsCollected+" of "+currentLevel.pillsCount,            
-            canvas.width / 2, STEP, STEP);
+            REAL_WIDTH / 2, STEP, STEP);
+
+        if(playing){
+            if(Math.random() > 0.1){
+                
+            }
+        }
 
     }else if(scene == SCENE_GAME_OVER){
         
@@ -224,21 +267,20 @@ function game(ctx){
         clearCanvas(ctx);   
         displayDarkOverlay(ctx);
         displayLifeCount(ctx); 
-        displayText(ctx, "GAME OVER!", canvas.width / 2, canvas.height / 2, STEP * 3);
+        displayText(ctx, "GAME OVER!", REAL_WIDTH / 2, REAL_HEIGHT / 2, STEP * 3);        
+
     }else if(scene == SCENE_LEVEL_COMPLETED){
 
         if(!SOUNDS.bg2.paused){
-            SOUNDS.bg2.pause();            
-            SOUNDS.win.play();
+            SOUNDS.bg2.pause();
         }                
 
-        clearCanvas(ctx);
-        displayDarkOverlay(ctx);        
-        displayText(ctx, "LEVEL COMPLETED!", canvas.width / 2, canvas.height / 3, STEP * 2);                
-        drawPacman(ctx, canvas.width / 2, canvas.height / 5 * 3, STEP * 2);
+        drawBackground(ctx);
+        displayText(ctx, "LEVEL COMPLETED!", REAL_WIDTH / 2, REAL_HEIGHT / 3, STEP * 2);                
+        drawPacman(ctx, REAL_WIDTH / 2, REAL_HEIGHT / 5 * 3, STEP * 2);
 
         if(cycle % 30 < 15){
-            displayText(ctx, "PRESS ANY KEY...", canvas.width / 2, canvas.height - STEP * 4, STEP);        
+            displayText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - STEP * 4, STEP);        
         }
 
     }else if(scene == SCENE_WIN){
@@ -250,10 +292,10 @@ function game(ctx){
 
         clearCanvas(ctx);
         displayDarkOverlay(ctx);                
-        displayText(ctx, "CONGRATULATIONS,", canvas.width / 2, canvas.height / 3 - STEP * 2, STEP);                
-        displayText(ctx, "YOU HAVE COMPLETED ALL LEVELS!", canvas.width / 2, canvas.height / 3, STEP);                
-        displayText(ctx, "THE END", canvas.width / 2, canvas.height / 2, STEP * 2);                
-        drawPacman(ctx, canvas.width / 2, canvas.height / 3 * 2, STEP * 2);
+        displayText(ctx, "CONGRATULATIONS,", REAL_WIDTH / 2, REAL_HEIGHT / 3 - STEP * 2, STEP);                
+        displayText(ctx, "YOU HAVE COMPLETED ALL LEVELS!", REAL_WIDTH / 2, REAL_HEIGHT / 3, STEP);                
+        displayText(ctx, "THE END", REAL_WIDTH / 2, REAL_HEIGHT / 2, STEP * 2);                
+        drawPacman(ctx, REAL_WIDTH / 2, REAL_HEIGHT / 3 * 2, STEP * 2);
     }
 
 
@@ -297,6 +339,11 @@ function keyDown(e) {
         } 
     }
 
+    continueOnKeyOrTouch();
+    
+}
+
+function continueOnKeyOrTouch(){    
     if(scene == SCENE_PRESS_ANY_KEY){
         scene = SCENE_GAME;
         resetEnemies();
@@ -312,12 +359,11 @@ function keyDown(e) {
     if(scene == SCENE_INTRO){        
         scene = SCENE_PRESS_ANY_KEY;
     }
-    
 }
 
 function resetPlayer(){
-    player.x = canvas.width/2;
-    player.y = canvas.height/2 + HALF_STEP;
+    player.x = 12 * STEP + HALF_STEP;
+    player.y = 13 * STEP + HALF_STEP;
     player.state = PLAYER_MOVING;
     player.size = 1;
 }
@@ -434,17 +480,15 @@ function checkEnemies(x, y, enemy){
 
 function displayDarkOverlay(ctx){
     ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, REAL_WIDTH, REAL_HEIGHT);
 }
 
-function displayText(ctx, text, x, y, size){                
-    ctx.font = size+"px sans-serif";                  
+function displayText(ctx, text, x, y, size, color){                
+    ctx.font = "bold "+size+"px sans-serif";                  
     var realX = x - (ctx.measureText(text).width / 2);
     var realY = y + (size / 2);    
-
-    ctx.fillStyle = "#333";
-    ctx.fillText(text,realX-2,realY+2);    
-    ctx.fillStyle = "#FFF";
+    
+    ctx.fillStyle = color ?  color : "#FFF";
     ctx.fillText(text,realX,realY);
 }
 
@@ -454,8 +498,8 @@ function displayLifeCount(ctx, x, y, scale){
         ctx.fillStyle = "red";
         ctx.font = "30px sans-serif";
         var text = "LIFE x "+player.lifes;
-        var x = (canvas.width - ctx.measureText(text).width) / 2;
-        var y = (canvas.height) / 3;
+        var x = (REAL_WIDTH - ctx.measureText(text).width) / 2;
+        var y = (REAL_HEIGHT) / 3;
         ctx.fillText(text, x, y)
     }
 }
@@ -519,6 +563,7 @@ function movePlayer(ctx){
 
                 if(pillsCollected >= currentLevel.pillsCount){                    
                     player.state = PLAYER_COMPLETED;                                                            
+                    SOUNDS.win.play();
                     overlay.x = player.x;
                     overlay.y = player.y;
                 }                

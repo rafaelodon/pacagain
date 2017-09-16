@@ -1,5 +1,5 @@
 var LEVEL1 = {
-    pillsCount: 1,
+    pillsCount: 5,
     enemies: [
         { id: 1, gx: 2, gy: 8, speed: 1, range: 5, direction: 0, color: "#F00" }, //red        
     ],
