@@ -80,6 +80,19 @@ var extraLife = { collected: true, gx: 0, gy: 0};
 
 var touch = { x: 0, y:0 }
 
+CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    this.beginPath();
+    this.moveTo(x+r, y);
+    this.arcTo(x+w, y,   x+w, y+h, r);
+    this.arcTo(x+w, y+h, x,   y+h, r);
+    this.arcTo(x,   y+h, x,   y,   r);
+    this.arcTo(x,   y,   x+w, y,   r);
+    this.closePath();
+    return this;
+  }
+
 window.onload = function(){    
 
     var replay = function() {        
@@ -248,10 +261,7 @@ function game(ctx){
         moveAndDrawEnemies(ctx);         
         movePlayer(ctx);        
         drawPlayer(player, ctx);
-        displayText(ctx, "LEVEL "+currentLevelNumber+" of "+LEVELS.length+
-            "        LIFES: "+player.lifes+
-            "        PILLS: "+pillsCollected+" of "+currentLevel.pillsCount,            
-            REAL_WIDTH / 2, STEP, STEP);
+        drawHeader(ctx);
 
         if(playing){
             if(Math.random() > 0.1){
@@ -301,6 +311,15 @@ function game(ctx){
 
 
     doCycle();
+}
+
+function drawHeader(ctx){
+    ctx.fillStyle = "#444"
+    ctx.fillRect(0,0,REAL_WIDTH,STEP*2)
+    displayText(ctx, "LEVEL "+currentLevelNumber+" of "+LEVELS.length+
+    "        LIFES: "+player.lifes+
+    "        PILLS: "+pillsCollected+" of "+currentLevel.pillsCount,            
+        REAL_WIDTH / 2, STEP*0.8, STEP);
 }
 
 function drawPacman(ctx, x, y, scale){
@@ -429,7 +448,7 @@ function drawPill(x, y, ctx){
 }
 
 function drawGrid(ctx){
-    ctx.strokeStyle = currentLevel.wallsColor;
+    ctx.strokeStyle = "rgba(255,255,255,0.05)";
     ctx.lineWIDTH = 1;
     for(var i=0; i<WIDTH; i++){        
         ctx.beginPath();
@@ -450,7 +469,12 @@ function drawMap(ctx){
         for(var x=0; x<WIDTH; x++){            
             if(checkObstacle(x,y)){
                 ctx.fillStyle = currentLevel.wallsColor;
-                ctx.fillRect(x*STEP,y*STEP,STEP,STEP);
+                ctx.roundRect(x*STEP,y*STEP,STEP-0.25,STEP-0.25, STEP/4);
+                ctx.fill();
+                ctx.fillStyle = "rgba(0,0,0,0.3)";
+                ctx.roundRect(x*STEP+STEP/8,y*STEP+STEP/8,STEP*0.7,STEP*0.7, STEP/8);
+                //ctx.fillRect(x*STEP,y*STEP,STEP,STEP);
+                ctx.fill();
             }
         }
     }
