@@ -1,3 +1,5 @@
+var DEVELOPMENT_MODE = 1;
+
 var SOUNDS = {
     beep : new Audio("sound/beep.wav"),  
     hit: new Audio("sound/hit.wav"),
@@ -27,14 +29,11 @@ CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
     this.closePath();
     return this;
 }    
-  
 
 window.onload = function(){    
 
     initializeSounds();        
-
-    document.getElementById("pause").onclick = onClickPause;
-    document.getElementById("next").onclick = onClickNext;
+    
     document.onkeydown = keyDown;
     document.body.addEventListener('touchstart', onTouchStart, false)
     document.body.addEventListener('touchend', onTouchEnd, false);
@@ -58,6 +57,14 @@ function keyDown(e) {
 
     e = e || window.event;
     
+    if(DEVELOPMENT_MODE){
+        if (e.keyCode == '80') { //P = pause game loop
+            Game.togglePausePlay();    
+        }else if(e.keyCode == '190'){ //> = next game loop
+            Game.loop();
+        }
+    }
+
     if (e.keyCode == '38') { //up
         Game.moveUp();
     } else if (e.keyCode == '40') { //down
@@ -66,9 +73,11 @@ function keyDown(e) {
         Game.moveLeft();
     } else if (e.keyCode == '39') { //right
         Game.moveRight();
-    }    
+    }
 
-    Game.continueOnKeyOrTouch();    
+    if(e.keyCode){
+        Game.continueOnKeyOrTouch();    
+    }
 }
 
 function onTouchStart(e){
@@ -95,10 +104,10 @@ function onTouchEnd(e){
     }
 }
 
-function onClickPause(){
-    Game.togglePausePlay();
-};
-
-function onClickNext(){    
-    Game.loop();
-}
+/**
+ * TODO List:
+ * Game loop:
+ *  - http://nokarma.org/2011/02/02/javascript-game-development-the-game-loop/index.html
+ * Canvas Performance:
+ *  - https://www.html5rocks.com/en/tutorials/canvas/performance/
+ */

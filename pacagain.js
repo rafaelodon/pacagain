@@ -49,6 +49,7 @@ var DIRECTIONS = [
 
 var Game = {    
     ctx : undefined,
+    auxCanvas : undefined,
     currentLevel : LEVELS[0],
     currentLevelNumber : 1,
     player : { x: 0, y: 0, speed: 1, direction: 0, color: "#FF0", lifes: 3, GHOST_STUCKED: false, state: PLAYER_MOVING, size: 1 },
@@ -62,6 +63,19 @@ var Game = {
     scene : SCENE_INTRO,        
     extraLife : { collected: true, gx: 0, gy: 0}, //TODO: extra life
     gameInterval : undefined
+}
+
+Game.preRenderLevel = function(){    
+    console.log("pre rendering...");
+    this.auxCanvas = document.createElement("canvas");
+    this.auxCanvas.width = REAL_WIDTH;
+    this.auxCanvas.height = REAL_HEIGHT;    
+    var auxCtx = this.auxCanvas.getContext('2d');
+    auxCtx.scale = this.ctx.scale;
+    auxCtx.clearRect(0, 0, REAL_WIDTH, REAL_HEIGHT);
+    this.drawBackground(auxCtx);
+    this.drawGrid(auxCtx);
+    this.drawMap(auxCtx);
 }
 
 Game.setCanvas = function(canvas){              
@@ -116,8 +130,23 @@ Game.resetPills = function(){
     }
 }
 
-Game.run = function(){         
-    this.gameInterval = setInterval(Game.loop, 1000/FPS)
+Game.loops = 0;
+Game.nextFrameTime = (new Date()).getTime();
+
+Game.run = function(){                      
+    while((new Date()).getTime() < Game.nextFrameTime){                
+    }
+    Game.nextFrameTime += 1000/FPS;
+    Game.update();    
+
+    if((new Date()).getTime() < Game.nextFrameTime){
+        Game.draw();
+    }
+    
+    window.requestAnimationFrame(Game.run);    
+
+    //Game.run();
+    //this.gameInterval = setInterval(Game.loop, 1000/FPS)
 }
 
 Game.togglePausePlay =  function(){  
@@ -142,9 +171,13 @@ Game.update = function(){
     this.doCycle();        
 }
 
-Game.draw = function(){             
+Game.draw = function(){        
 
     var ctx = this.ctx;
+        
+    if(this.auxCanvas == undefined){
+        this.preRenderLevel();
+    }
 
     ctx.clearRect(0, 0, REAL_WIDTH, REAL_HEIGHT);
     
@@ -160,7 +193,7 @@ Game.draw = function(){
 
         if(SOUNDS.bg1.paused){
             SOUNDS.bg1.play();
-        }                
+        }         
             
         this.drawBackground(ctx);
         this.drawPacman(ctx, REAL_WIDTH / 2, REAL_HEIGHT / 3, STEP * 4);
@@ -277,20 +310,19 @@ Game.moveLeft = function(){
 }
 
 Game.continueOnKeyOrTouch = function(){    
-    if(this.scene == SCENE_PRESS_ANY_KEY){
-        this.scene = SCENE_GAME;
+    if(this.scene == SCENE_PRESS_ANY_KEY){        
+        this.scene = SCENE_GAME;        
         this.resetEnemies();
         this.resetPlayer();
-        this.playing = true;
-        
+        this.playing = true;        
     }
 
     if(this.scene == SCENE_LEVEL_COMPLETED){        
-        this.nextLevel();      
+        this.nextLevel();              
     }
 
     if(this.scene == SCENE_INTRO){        
-        this.scene = SCENE_PRESS_ANY_KEY;
+        this.scene = SCENE_PRESS_ANY_KEY;        
     }
 }
 
@@ -304,12 +336,13 @@ Game.resetPlayer = function(){
 Game.nextLevel = function(){
     if(this.currentLevelNumber < LEVELS.length){            
         this.currentLevel = LEVELS[this.currentLevelNumber];
-        this.currentLevelNumber++;
+        this.currentLevelNumber++;        
         this.resetPills();
         this.resetEnemies();
         this.resetPlayer();
         this.pillsCollected = 0;
         this.playing = true;
+        this.preRenderLevel();
         this.scene = SCENE_PRESS_ANY_KEY;
     }else{
         this.scene = SCENE_WIN;
@@ -326,10 +359,8 @@ Game.generateCoordinateOnEmptySpace = function(){
     return {x:x, y:y};
 }
 
-Game.clearCanvas = function(ctx){
-    this.drawBackground(ctx);
-    this.drawGrid(ctx)
-    this.drawMap(ctx);  
+Game.clearCanvas = function(ctx){    
+    ctx.drawImage(this.auxCanvas, 0, 0); //background is pre-rendered on another canvas;-)    
     this.drawPills(ctx);
 }
 
@@ -362,33 +393,33 @@ Game.drawPill = function(x, y, ctx){
 }
 
 Game.drawGrid = function(ctx){
-    ctx.strokeStyle = "rgba(255,255,255,0.05)";
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
     ctx.lineWIDTH = 1;
-    for(var i=0; i<WIDTH; i++){        
-        ctx.beginPath();
+    ctx.beginPath();
+    for(var i=0; i<WIDTH; i++){                
         ctx.moveTo(i*STEP,0);
-        ctx.lineTo(i*STEP,HEIGHT*STEP);            
-        ctx.stroke();
+        ctx.lineTo(i*STEP,HEIGHT*STEP);                    
     }
-    for(var j=0; j<HEIGHT; j++){
-        ctx.beginPath();
+    for(var j=0; j<HEIGHT; j++){        
         ctx.moveTo(0, j*STEP);
         ctx.lineTo(WIDTH*STEP, j*STEP);            
-        ctx.stroke();
     }
+    ctx.stroke();
 }
 
 Game.drawMap = function(ctx){
+    
     for(var y=0; y<HEIGHT; y++){
         for(var x=0; x<WIDTH; x++){            
-            if(this.checkObstacle(x,y)){
+            if(this.checkObstacle(x,y)){               
                 ctx.fillStyle = this.currentLevel.wallsColor;
                 ctx.roundRect(x*STEP,y*STEP,STEP-0.25,STEP-0.25, STEP/4);
                 ctx.fill();
                 ctx.fillStyle = "rgba(0,0,0,0.3)";
-                ctx.roundRect(x*STEP+STEP/8,y*STEP+STEP/8,STEP*0.7,STEP*0.7, STEP/8);
-                //ctx.fillRect(x*STEP,y*STEP,STEP,STEP);
+                ctx.roundRect(x*STEP+STEP/8,y*STEP+STEP/8,STEP*0.7,STEP*0.7, STEP/8);                            
                 ctx.fill();
+
+                //ctx.fillRect(x*STEP,y*STEP,STEP,STEP);
             }
         }
     }
@@ -443,8 +474,7 @@ Game.displayLifeCount = function(ctx, x, y, scale){
 }
 
 Game.doCycle = function(){
-    this.cycle = ++this.cycle % Number.MAX_VALUE; 
-    document.getElementById("cycle").innerText = ""+ this.cycle;  
+    this.cycle = ++this.cycle % Number.MAX_VALUE;     
 }
 
 Game.movePlayer = function(){
