@@ -57,11 +57,13 @@ function keyDown(e) {
 
     e = e || window.event;
     
-    if(DEVELOPMENT_MODE){
-        if (e.keyCode == '80') { //P = pause game loop
-            Game.togglePausePlay();    
+    if(DEVELOPMENT_MODE == 1){
+        if (e.keyCode == '80') { //P = pause game loop            
+            Game.togglePausePlay(); 
+            return;
         }else if(e.keyCode == '190'){ //> = next game loop
             Game.loop();
+            return;
         }
     }
 

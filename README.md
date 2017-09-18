@@ -1,13 +1,9 @@
-# PAC-AGAIN: Pacman revisited by Rafael Odon
+# PAC-AGAIN: Pacman revisited by Rafael Odon (odon.rafael@gmail.com)
 
-Just some classic gaming experiments based on HTML5 Canvas and JavaScript (ES5).
+A Pacman variation written in pure HTML5 Canvas/Javascript (ES5) for learning purposes.
 
-Created for fun/learning purposes. 
+Be careful, may contain bad quality code. :'(
 
-Be careful, may contain bad quality code.
-
-CREDITS:
-
-* Background music: CH Loops by Clinthammer (https://freesound.org/people/Clinthammer/packs/11343/)
-
-* FX sound: 8-Bit Sound Effects Library by LittleRobotSoundFactory (https://freesound.org/people/LittleRobotSoundFactory/packs/16681/)
+Adittional credits:
+* Soundtrack: CH Loops by Clinthammer (https://freesound.org/people/Clinthammer/packs/11343/)
+* Sound FX: 8-Bit Sound Effects Library by LittleRobotSoundFactory (https://freesound.org/people/LittleRobotSoundFactory/packs/16681/)
