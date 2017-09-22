@@ -7,7 +7,7 @@
  */
 
 // constants
-var FPS=30;
+var FPS=60;
 var TILE=24;
 var HALF_TILE=TILE/2;
 var GRID_WIDTH=25;
@@ -63,7 +63,7 @@ var Player = {
     speed: 1, 
     direction: Directions.RIGHT, 
     color: "#FF0",
-    lifes: 5, 
+    lifes: 3, 
     stucked: false,
     state: this.MOVING,
     size: 1 
@@ -87,8 +87,35 @@ var Game = {
     lastKeyDirection : Directions.RIGHT,    
     cycle : 0,
     scene : Scenes.INTRO,        
-    extraLife : { collected: true, gx: 0, gy: 0}, //TODO: extra life
+    extraLife : { active: false, collected: true, gx: 12, gy: 12}, //TODO: extra life
     stop : false
+}
+
+Game.nextFrameTime = undefined;
+Game.lastTime = undefined;
+Game.deltaTime = 0;
+Game.run = function(){
+    window.requestAnimationFrame(Game.loop);
+}
+
+Game.loop = function(time){
+    
+    if(!this.lastTime){
+        this.lastTime = time;
+    }            
+
+    Game.update();
+
+    this.deltaTime = time - this.lastTime;            
+    
+    if(deltaTime > 1000/FPS){                            
+        Game.draw();  
+        this.lastTime = time + (this.deltaTime % 1000/FPS);    
+    }
+    
+    if(!Game.stop){
+        window.requestAnimationFrame(Game.loop);    
+    }
 }
 
 Game.preRenderLevel = function(){
@@ -107,7 +134,7 @@ Game.preRenderLevel = function(){
 Game.setCanvas = function(canvas){              
     var scale = 1;        
     var scaleX = window.innerWidth / (GRID_WIDTH * TILE);
-    var scaleY = window.innerHeight / (GRID_HEIGHT * TILE);
+    var scaleY = (window.innerHeight - 80) / (GRID_HEIGHT * TILE);
     
     if(scaleX < scaleY){
         scale = scaleX;
@@ -147,31 +174,13 @@ Game.resetEnemies = function(){
 }
 
 Game.resetPills = function(){
-    this.currentLevel.pillsCount = 1;
+    //this.currentLevel.pillsCount = 1;
     for(var i=0; i<this.currentLevel.pillsCount; i++){
         var pill = this.generateCoordinateOnEmptySpace();
         if(this.pills[pill.x] === undefined){
             this.pills[pill.x] = new Array(GRID_WIDTH);
         }
         this.pills[pill.x][pill.y] = 1;        
-    }
-}
-
-Game.loops = 0;
-Game.nextFrameTime = (new Date()).getTime();
-
-Game.run = function(){                      
-    while((new Date()).getTime() < Game.nextFrameTime){        
-    }
-    Game.nextFrameTime += 1000/FPS;
-    Game.update();    
-
-    if((new Date()).getTime() < Game.nextFrameTime){
-        Game.draw();
-    }
-    
-    if(!Game.stop){
-        window.requestAnimationFrame(Game.run);    
     }
 }
 
@@ -184,11 +193,6 @@ Game.togglePausePlay = function(){
     }else{
         alert("Stopping...");
     }
-}
-
-Game.loop = function(){
-    Game.update();
-    Game.draw();
 }
 
 Game.update = function(){
@@ -271,7 +275,8 @@ Game.draw = function(){
         }
 
         this.clearCanvas(ctx);
-        this.drawEnemies(ctx);
+        this.drawEnemies(ctx); 
+        this.drawExtraLife(ctx);       
         this.drawPlayer(this.player, ctx);
         this.drawHeader(ctx);
 
@@ -334,7 +339,7 @@ Game.draw = function(){
             enemy.y = REAL_HEIGHT / 3 * 2;            
             this.drawEnemy(enemy, ctx, TILE * 2);                   
         } 
-    }
+    }    
 }
 
 Game.drawHeader = function(ctx){
@@ -396,6 +401,7 @@ Game.nextLevel = function(){
         this.pillsCollected = 0;
         this.playing = true;
         this.preRenderLevel();
+        this.extraLife.active = false;
         this.scene = Scenes.PRE_LEVEL;
     }else{
         this.scene = Scenes.WIN;
@@ -445,6 +451,31 @@ Game.drawPill = function(x, y, ctx){
     ctx.fill();
 }
 
+Game.drawExtraLife = function(ctx){    
+    if(this.extraLife.active){                
+        ctx.fillStyle = "red";
+        ctx.beginPath();
+        var rx = this.extraLife.gx * TILE + HALF_TILE;
+        var ry = this.extraLife.gy * TILE + HALF_TILE;        
+        var radius = HALF_TILE/2 * 1-0.7*Math.sin(this.cycle * Math.PI * 2 / FPS * 2);
+        ctx.arc(rx - radius * 0.9, ry, radius * 1.1, Math.PI, 0);    
+        ctx.arc(rx + radius, ry, radius * 1.1, Math.PI, 0);                
+        ctx.quadraticCurveTo(rx + radius * 1.7, ry + radius * 1.6, rx, ry + radius * 2);        
+        ctx.quadraticCurveTo(rx - radius * 1.7, ry + radius * 1.6, rx - radius * 2, ry);    
+        ctx.closePath();    
+        ctx.fill();        
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.arc(rx + radius*1.3, ry - radius*0.4, radius*0.2, 0, Math.PI*2);        
+        ctx.closePath();
+        ctx.fill();  
+        ctx.beginPath();
+        ctx.arc(rx - radius*0.7, ry - radius*0.4, radius*0.2, 0, Math.PI*2);        
+        ctx.closePath();
+        ctx.fill();                
+    }    
+}
+
 Game.drawGrid = function(ctx){
     ctx.strokeStyle = "rgba(255,255,255,0.1)";
     ctx.lineWIDTH = 1;
@@ -484,6 +515,10 @@ Game.checkPlayer = function(x,y){
 
 Game.checkPill = function(x,y){
     return this.pills[x] && this.pills[x][y] == 1;    
+}
+
+Game.checkExtraLife = function(x,y){
+    return this.extraLife.active && this.extraLife.gx == x && this.extraLife.gy == y;    
 }
 
 Game.checkObstacle = function(x, y){
@@ -583,12 +618,28 @@ Game.movePlayer = function(){
                 this.pillsCollected++;
                 this.pills[player.gx][player.gy] = undefined;
 
+                if(this.pillsCollected == this.currentLevel.pillsCount - 1){                    
+                    var g = this.generateCoordinateOnEmptySpace();
+                    this.extraLife.gx = g.x;
+                    this.extraLife.gy = g.y;
+                    this.extraLife.active = true;
+                }
+
                 if(this.pillsCollected >= this.currentLevel.pillsCount){                    
                     player.state = Player.COMPLETED;                                                            
                     SOUNDS.win.play();
                     this.overlay.x = player.x;
                     this.overlay.y = player.y;
                 }                
+            }
+
+            if(this.checkExtraLife(player.gx, player.gy)){
+                SOUNDS.collect.currentTime = 0;
+                SOUNDS.collect.volume = 0.1;
+                SOUNDS.collect.play();
+                this.player.lifes++;
+                this.extraLife.active = false;
+                this.extraLife.collected = true;
             }
         }        
     }
@@ -672,9 +723,9 @@ Game.randomWalk = function(enemy){
     }
 
     var tries = 0;
-    while(true){                
-        var destX = enemy.x + Directions.DELTA[enemy.direction].dx * TILE / 8;
-        var destY = enemy.y + Directions.DELTA[enemy.direction].dy * TILE / 8;
+    while(true){                        
+        var destX = enemy.x + Directions.DELTA[enemy.direction].dx * TILE / 8 * enemy.speed;
+        var destY = enemy.y + Directions.DELTA[enemy.direction].dy * TILE / 8 * enemy.speed;
 
         var gridX = parseInt((enemy.x + Directions.DELTA[enemy.direction].dx * (HALF_TILE + 0.5)) / TILE); 
         var gridY = parseInt((enemy.y + Directions.DELTA[enemy.direction].dy * (HALF_TILE + 0.5)) / TILE);

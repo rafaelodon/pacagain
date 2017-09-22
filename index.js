@@ -62,18 +62,27 @@ function keyDown(e) {
             Game.togglePausePlay(); 
             return;
         }else if(e.keyCode == '190'){ //> = next game loop
-            Game.loop();
+            Game.update();
+            Game.draw();
             return;
         }
     }
 
     if (e.keyCode == '38') { //up
+        window.scrollTo(0,0);
+        e.preventDefault();
         Game.moveUp();
     } else if (e.keyCode == '40') { //down
+        window.scrollTo(0,0);
+        e.preventDefault();
         Game.moveDown();
     } else if (e.keyCode == '37') { //left
+        window.scrollTo(0,0);
+        e.preventDefault();
         Game.moveLeft();
     } else if (e.keyCode == '39') { //right
+        window.scrollTo(0,0);
+        e.preventDefault();
         Game.moveRight();
     }
 
