@@ -7,13 +7,15 @@
  */
 
 // constants
-var FPS=60;
 var TILE=24;
 var HALF_TILE=TILE/2;
 var GRID_WIDTH=25;
 var GRID_HEIGHT=26;
 var REAL_WIDTH=TILE*GRID_WIDTH;
 var REAL_HEIGHT=TILE*GRID_HEIGHT;
+
+//Levels objects described in levels.js
+var LEVELS = [LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5, LEVEL6];
 
 //directions
 var Directions = {
@@ -78,44 +80,15 @@ var Game = {
     ctx : undefined,
     auxCanvas : undefined,
     currentLevel : LEVELS[0],
-    currentLevelNumber : 1,    
+    currentLevelNumber : 1,  
     overlay : {},
     player : Player,
     playing : true,
     pills : [],
     pillsCollected : 0,
     lastKeyDirection : Directions.RIGHT,    
-    cycle : 0,
-    scene : Scenes.INTRO,        
-    extraLife : { active: false, collected: true, gx: 12, gy: 12}, //TODO: extra life
-    stop : false
-}
-
-Game.nextFrameTime = undefined;
-Game.lastTime = undefined;
-Game.deltaTime = 0;
-Game.run = function(){
-    window.requestAnimationFrame(Game.loop);
-}
-
-Game.loop = function(time){
-    
-    if(!this.lastTime){
-        this.lastTime = time;
-    }            
-
-    Game.update();
-
-    this.deltaTime = time - this.lastTime;            
-    
-    if(deltaTime > 1000/FPS){                            
-        Game.draw();  
-        this.lastTime = time + (this.deltaTime % 1000/FPS);    
-    }
-    
-    if(!Game.stop){
-        window.requestAnimationFrame(Game.loop);    
-    }
+    currentScene : Scenes.INTRO,        
+    extraLife : { active: false, collected: true, gx: 12, gy: 12}, //TODO: extra life    
 }
 
 Game.preRenderLevel = function(){
@@ -132,7 +105,7 @@ Game.preRenderLevel = function(){
 }
 
 Game.setCanvas = function(canvas){              
-    var scale = 1;        
+    var scale = 1;      
     var scaleX = window.innerWidth / (GRID_WIDTH * TILE);
     var scaleY = (window.innerHeight - 80) / (GRID_HEIGHT * TILE);
     
@@ -184,23 +157,11 @@ Game.resetPills = function(){
     }
 }
 
-Game.togglePausePlay = function(){      
-    this.stop = !this.stop;
-
-    if(!this.stop){      
-        alert("Resuming...");
-        Game.run();    
-    }else{
-        alert("Stopping...");
-    }
-}
-
 Game.update = function(){
-    if(this.scene == Scenes.GAME){
+    if(this.currentScene == Scenes.GAME){
         this.moveEnemies();
         this.movePlayer();
-    }
-    this.doCycle();        
+    }    
 }
 
 Game.draw = function(){        
@@ -221,14 +182,14 @@ Game.draw = function(){
 
     ctx.globalCompositeOperation='source-atop';
 
-    if(this.scene == Scenes.INTRO){
+    if(this.currentScene == Scenes.INTRO){
 
         if(SOUNDS.bg1.paused){
             SOUNDS.bg1.play();
         }         
             
         this.drawBackground(ctx);        
-        var dx = Math.sin(this.cycle * Math.PI * 2 / FPS) * TILE/4;
+        var dx = Math.sin(Loop.lastTime / 1000 * Math.PI) * TILE/2;
         this.drawPlayer({
                 x: REAL_WIDTH / 2 + dx,
                 y: REAL_HEIGHT / 3,                
@@ -237,14 +198,10 @@ Game.draw = function(){
                 state: Player.MOVING
             },ctx,TILE * 6);
         this.displayText(ctx, "PAC-AGAIN", REAL_WIDTH / 2, REAL_HEIGHT / 2 + TILE * 2, TILE * 3);                
-        this.displayText(ctx, "by Rafael Odon", REAL_WIDTH / 2, REAL_HEIGHT / 2 + TILE * 5, TILE * 0.75 )
+        this.displayText(ctx, "by Rafael Odon", REAL_WIDTH / 2, REAL_HEIGHT / 2 + TILE * 5, TILE * 0.75 );
+        this.blinkText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);
 
-        if(this.cycle % 30 < 15){
-            this.displayText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);        
-        }       
-            
-
-    }else if(this.scene == Scenes.PRE_LEVEL){
+    }else if(this.currentScene == Scenes.PRE_LEVEL){
 
         if(SOUNDS.bg1.paused){
             SOUNDS.bg2.pause();
@@ -261,13 +218,10 @@ Game.draw = function(){
             state: GHOST_EXPLORING,
             direction: Directions.LEFT,            
             color: this.currentLevel.enemies[this.currentLevel.enemies.length - 1].color
-        }, ctx, TILE * 5);
+        }, ctx, TILE * 5);        
+        this.blinkText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);                
 
-        if(this.cycle % 30 < 15){
-            this.displayText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);        
-        }
-
-    }else if(this.scene == Scenes.GAME){
+    }else if(this.currentScene == Scenes.GAME){
 
         if(SOUNDS.bg2.paused){
             SOUNDS.bg1.pause();
@@ -280,7 +234,7 @@ Game.draw = function(){
         this.drawPlayer(this.player, ctx);
         this.drawHeader(ctx);
 
-    }else if(this.scene == Scenes.GAME_OVER){
+    }else if(this.currentScene == Scenes.GAME_OVER){
         
         SOUNDS.bg1.pause();
         SOUNDS.bg2.pause();
@@ -290,7 +244,7 @@ Game.draw = function(){
         this.displayLifeCount(ctx); 
         this.displayText(ctx, "GAME OVER!", REAL_WIDTH / 2, REAL_HEIGHT / 2, TILE * 3);        
 
-    }else if(this.scene == Scenes.LEVEL_COMPLETED){
+    }else if(this.currentScene == Scenes.LEVEL_COMPLETED){
 
         if(!SOUNDS.bg2.paused){
             SOUNDS.bg2.pause();
@@ -306,11 +260,9 @@ Game.draw = function(){
             state: Player.MOVING
         },ctx,TILE * 4);
 
-        if(this.cycle % 30 < 15){
-            this.displayText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);        
-        }
+        this.blinkText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);        
 
-    }else if(this.scene == Scenes.WIN){
+    }else if(this.currentScene == Scenes.WIN){
 
         if(!SOUNDS.bg2.paused){
             SOUNDS.bg2.pause();            
@@ -321,7 +273,7 @@ Game.draw = function(){
         this.displayText(ctx, "CONGRATULATIONS,", REAL_WIDTH / 2, REAL_HEIGHT / 3 - TILE * 2, TILE);                
         this.displayText(ctx, "YOU HAVE COMPLETED ALL LEVELS!", REAL_WIDTH / 2, REAL_HEIGHT / 3, TILE);                
         this.displayText(ctx, "THE END", REAL_WIDTH / 2, REAL_HEIGHT / 2, TILE * 2);                                
-        var dx = Math.sin(this.cycle * Math.PI * 2 / FPS) * TILE/4;
+        var dx = Math.sin(Loop.lastTime / 500 * Math.PI ) * TILE/4;
         this.drawPlayer({
                 x: REAL_WIDTH / 9 + dx,
                 y: REAL_HEIGHT / 3 * 2,                
@@ -331,7 +283,7 @@ Game.draw = function(){
             },ctx,TILE * 2);
 
         for(var i=0; i<LEVELS[LEVELS.length-1].enemies.length; i++){
-            var dx = Math.sin((this.cycle+i) * Math.PI * 2 / FPS) * TILE/4;
+            var dx = Math.sin((Loop.lastTime+i*Loop.fps) / 500 * Math.PI) * TILE/2
             var enemy = LEVELS[LEVELS.length-1].enemies[i];
             enemy.state = GHOST_CHASING;
             enemy.direction = Directions.LEFT;
@@ -368,19 +320,19 @@ Game.moveLeft = function(){
 }
 
 Game.continueOnKeyOrTouch = function(){    
-    if(this.scene == Scenes.PRE_LEVEL){        
-        this.scene = Scenes.GAME;        
+    if(this.currentScene == Scenes.PRE_LEVEL){        
+        this.currentScene = Scenes.GAME;        
         this.resetEnemies();
         this.resetPlayer();
         this.playing = true;        
     }
 
-    if(this.scene == Scenes.LEVEL_COMPLETED){        
+    if(this.currentScene == Scenes.LEVEL_COMPLETED){        
         this.nextLevel();              
     }
 
-    if(this.scene == Scenes.INTRO){        
-        this.scene = Scenes.PRE_LEVEL;        
+    if(this.currentScene == Scenes.INTRO){        
+        this.currentScene = Scenes.PRE_LEVEL;        
     }
 }
 
@@ -402,9 +354,9 @@ Game.nextLevel = function(){
         this.playing = true;
         this.preRenderLevel();
         this.extraLife.active = false;
-        this.scene = Scenes.PRE_LEVEL;
+        this.currentScene = Scenes.PRE_LEVEL;
     }else{
-        this.scene = Scenes.WIN;
+        this.currentScene = Scenes.WIN;
     }  
 }
 
@@ -440,7 +392,7 @@ Game.drawPills = function(ctx){
 
 Game.drawPill = function(x, y, ctx){       
     ctx.fillStyle = "black"
-    var value = (Math.sin(this.cycle * Math.PI * 2 / FPS) / 2 + 0.5) * 0xFF | 0;        
+    var value = (Math.sin(Loop.lastTime / 500 * Math.PI) / 2 + 0.5) * 0xFF | 0;        
     var grayscale = (value << 16) | (value << 8) | value;
     var color = '#' + grayscale.toString(16);
 
@@ -457,7 +409,7 @@ Game.drawExtraLife = function(ctx){
         ctx.beginPath();
         var rx = this.extraLife.gx * TILE + HALF_TILE;
         var ry = this.extraLife.gy * TILE + HALF_TILE;        
-        var radius = HALF_TILE/2 * 1-0.7*Math.sin(this.cycle * Math.PI * 2 / FPS * 2);
+        var radius = HALF_TILE/2 * 1-0.7*Math.sin(Loop.lastTime / 500 * Math.PI);
         ctx.arc(rx - radius * 0.9, ry, radius * 1.1, Math.PI, 0);    
         ctx.arc(rx + radius, ry, radius * 1.1, Math.PI, 0);                
         ctx.quadraticCurveTo(rx + radius * 1.7, ry + radius * 1.6, rx, ry + radius * 2);        
@@ -549,6 +501,12 @@ Game.displayText = function(ctx, text, x, y, size, color){
     ctx.fillText(text,realX,realY);
 }
 
+Game.blinkText = function(ctx, text, x, y, size, color){
+    if(Loop.lastTime/30 % 30 < 15){
+        this.displayText(ctx, text, x, y, size, color);
+    }
+}
+
 Game.displayLifeCount = function(ctx, x, y, scale){
     if(x == undefined){
 
@@ -559,10 +517,6 @@ Game.displayLifeCount = function(ctx, x, y, scale){
         var y = (REAL_HEIGHT) / 3;
         ctx.fillText(text, x, y)
     }
-}
-
-Game.doCycle = function(){
-    this.cycle = ++this.cycle % Number.MAX_VALUE;     
 }
 
 Game.movePlayer = function(){
@@ -649,14 +603,14 @@ Game.movePlayer = function(){
         this.overlay.size *= 0.9;                
         if(this.overlay.size <= TILE){            
             this.resetOverlay();
-            this.scene = Scenes.LEVEL_COMPLETED;            
+            this.currentScene = Scenes.LEVEL_COMPLETED;            
         }
 
     }else if(player.state == Player.DEAD){
         if(player.lifes > 0){
-            this.scene = Scenes.PRE_LEVEL;        
+            this.currentScene = Scenes.PRE_LEVEL;        
         }else{
-            this.scene = Scenes.GAME_OVER;        
+            this.currentScene = Scenes.GAME_OVER;        
             SOUNDS.over.play();
         }
 
@@ -827,8 +781,8 @@ Game.drawPlayer = function(player, ctx, scale){
         archEnd = 1.5;
     }    
 
-    if(player.state == Player.MOVING){
-        player.mouthOpening = (Math.sin(this.cycle * Math.PI * 2 / FPS*2) / 2 + 0.5);        
+    if(player.state == Player.MOVING){        
+        player.mouthOpening = (Math.sin(Loop.lastTime / 333 * Math.PI) / 2 + 0.5);        
     }
         
     ctx.beginPath();

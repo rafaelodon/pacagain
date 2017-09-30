@@ -12,9 +12,6 @@ var SOUNDS = {
     bg2: new Audio("sound/bg2.wav"),
 }
 
-//Levels objects described in levels.js
-var LEVELS = [LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5, LEVEL6];
-
 var touch = {}; 
 
 CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
@@ -40,7 +37,7 @@ window.onload = function(){
 
     Game.setCanvas(document.getElementById("canvas"));
     Game.resetAll();        
-    Game.run();
+    Loop.run(Game);
 }
 
 function initializeSounds(){
@@ -59,11 +56,10 @@ function keyDown(e) {
     
     if(DEVELOPMENT_MODE == 1){
         if (e.keyCode == '80') { //P = pause game loop            
-            Game.togglePausePlay(); 
+            Loop.togglePausePlay(); 
             return;
-        }else if(e.keyCode == '190'){ //> = next game loop
-            Game.update();
-            Game.draw();
+        }else if(e.keyCode == '190'){ //> = next game loop            
+            Loop.loop(Loop.lastTime + 1000/Loop.fps);
             return;
         }
     }
@@ -117,8 +113,7 @@ function onTouchEnd(e){
 
 /**
  * TODO List:
- * Game loop:
- *  - http://nokarma.org/2011/02/02/javascript-game-development-the-game-loop/index.html
- * Canvas Performance:
- *  - https://www.html5rocks.com/en/tutorials/canvas/performance/
+ *
+ * - Improve Canvas performance:
+ *   https://www.html5rocks.com/en/tutorials/canvas/performance/
  */
