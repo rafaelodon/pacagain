@@ -6,7 +6,7 @@
  * 
  * 'yourgame' must define update() and draw() members.
  * 
- * Author: Rafael Odon (odon.rafael@gmail.com)
+ * @author Rafael Odon <odon.rafael@gmail.com>
  */
 var Loop = {    
     fps : 30,

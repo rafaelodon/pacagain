@@ -8,6 +8,7 @@ var SOUNDS = {
     die: new Audio("sound/die.wav"),
     over: new Audio("sound/over.wav"),    
     win: new Audio("sound/win.wav"),
+    door: new Audio("sound/door.wav"),
     bg1: new Audio("sound/bg1.wav"),
     bg2: new Audio("sound/bg2.wav"),
 }
@@ -47,7 +48,7 @@ function initializeSounds(){
     };
 
     SOUNDS.bg1.addEventListener('ended', replay, false);
-    SOUNDS.bg2.addEventListener('ended', replay, false);    
+    SOUNDS.bg2.addEventListener('ended', replay, false);
 }
 
 function keyDown(e) {

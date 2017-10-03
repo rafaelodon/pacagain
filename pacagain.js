@@ -3,7 +3,7 @@
  * 
  * A pacman variation written in pure HTML5 Canvas/JavaScript (ES5) for learning purposes.
  * 
- * Author: Rafael Odon (odon.rafael@gmail.com)
+ * @author Rafael Odon <odon.rafael@gmail.com>
  */
 
 // constants
@@ -16,32 +16,6 @@ var REAL_HEIGHT=TILE*GRID_HEIGHT;
 
 //Levels objects described in levels.js
 var LEVELS = [LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5, LEVEL6];
-
-//directions
-var Directions = {
-    RIGHT : 0,
-    DOWN : 1,
-    LEFT : 2,
-    UP : 3,
-    DELTA : [
-        { dx: 1, dy: 0}, // right    
-        { dx: 0, dy: 1}, // down    
-        { dx: -1, dy: 0}, // left        
-        { dx: 0, dy: -1}, // up    
-    ]
-}
-
-Directions.oppositeDirection = function(obj){
-    obj.direction = (obj.direction + 2) % 4;
-}
-
-Directions.nextDirection = function(obj){
-    obj.direction = (obj.direction + 1) % 4;    
-}
-
-Directions.previousDirection = function(obj){
-    obj.direction = (obj.direction + 3) % 4;            
-}
 
 //scenes
 var Scenes = {
@@ -83,8 +57,8 @@ var Game = {
     currentLevelNumber : 1,  
     overlay : {},
     player : Player,
-    playing : true,
-    pills : [],
+    playing : true,    
+    objects : new Grid(GRID_WIDTH, GRID_HEIGHT),
     pillsCollected : 0,
     lastKeyDirection : Directions.RIGHT,    
     currentScene : Scenes.INTRO,        
@@ -124,7 +98,8 @@ Game.setCanvas = function(canvas){
 
 Game.resetAll = function(){
     this.resetOverlay();
-    this.resetPills();    
+    this.resetPills();  
+    this.resetLevel();
     this.resetEnemies();
     this.resetPlayer();
 }
@@ -146,15 +121,46 @@ Game.resetEnemies = function(){
     });
 }
 
-Game.resetPills = function(){
-    //this.currentLevel.pillsCount = 1;
-    for(var i=0; i<this.currentLevel.pillsCount; i++){
-        var pill = this.generateCoordinateOnEmptySpace();
-        if(this.pills[pill.x] === undefined){
-            this.pills[pill.x] = new Array(GRID_WIDTH);
+Game.resetDoors = function(){    
+    for(var y=0; y<GRID_HEIGHT; y++){
+        for(var x=0; x<GRID_WIDTH; x++){            
+            if(this.currentLevel.map[y].charAt(x) == "|"){ // door
+                if(this.doors[x] === undefined){
+                    this.doors[x] = new Array(GRID_WIDTH);
+                }
+                this.doors[x][y] = 1;
+            }
         }
-        this.pills[pill.x][pill.y] = 1;        
     }
+}
+
+Game.resetPills = function(){
+    
+    this.objects.clearAll();
+    this.currentLevel.pillsCount = 0;
+
+    for(var y=0; y<GRID_HEIGHT; y++){
+        for(var x=0; x<GRID_WIDTH; x++){            
+    
+            var tile = this.currentLevel.map[y].charAt(x);
+
+            if(tile == "."){ // register pills
+                this.objects.set(x,y,{
+                    type : Objects.PILL,
+                    collected : false
+                });                
+                this.currentLevel.pillsCount++;
+
+            }else if(tile >= '0' && tile <= '9'){ // register other objects
+                if(this.currentLevel.objects[tile]){                    
+                    var obj = this.currentLevel.objects[tile];
+                    obj.x = x;
+                    obj.y = y;                    
+                    this.objects.set(x,y,obj);
+                }
+            }
+        }
+    }    
 }
 
 Game.update = function(){
@@ -336,6 +342,10 @@ Game.continueOnKeyOrTouch = function(){
     }
 }
 
+Game.resetLevel = function(){
+    this.currentLevel = JSON.parse(JSON.stringify(LEVELS[this.currentLevelNumber - 1]));    
+}
+
 Game.resetPlayer = function(){
     this.player.x = 12 * TILE + HALF_TILE;
     this.player.y = 13 * TILE + HALF_TILE;
@@ -344,9 +354,9 @@ Game.resetPlayer = function(){
 }
 
 Game.nextLevel = function(){
-    if(this.currentLevelNumber < LEVELS.length){            
-        this.currentLevel = LEVELS[this.currentLevelNumber];
+    if(this.currentLevelNumber < LEVELS.length){                                
         this.currentLevelNumber++;        
+        this.resetLevel();
         this.resetPills();
         this.resetEnemies();
         this.resetPlayer();
@@ -385,6 +395,10 @@ Game.drawPills = function(ctx){
         for(var y=0; y<GRID_HEIGHT; y++){
             if(this.checkPill(x, y)){
                 this.drawPill(x, y, ctx);
+            }else if(this.checkDoor(x, y)){
+                this.drawDoor(x, y, this.objects.get(x, y), ctx);
+            }else if(this.checkKey(x, y)){
+                this.drawKey(x, y, this.objects.get(x, y), ctx);
             }
         }
     }
@@ -398,9 +412,38 @@ Game.drawPill = function(x, y, ctx){
 
     ctx.fillStyle = color;    
     ctx.beginPath();
-    ctx.arc(x*TILE+HALF_TILE, y*TILE+HALF_TILE, HALF_TILE*0.3, 0, 2*Math.PI);
-    ctx.arc(x*TILE+HALF_TILE, y*TILE+HALF_TILE, HALF_TILE*0.3, 0, 2*Math.PI);
+    ctx.arc(x*TILE+HALF_TILE, y*TILE+HALF_TILE, HALF_TILE*0.3, 0, 2*Math.PI);    
     ctx.fill();
+}
+
+Game.drawDoor = function(x, y, door, ctx){    
+    if(door.orientation == Orientations.VERTICAL){
+        ctx.fillStyle = "#555";
+        ctx.fillRect(x*TILE + TILE/3,y*TILE,TILE/3,TILE);
+    }else if(door.orientation == Orientations.HORIZONTAL){
+        ctx.fillStyle = "#555";
+        ctx.fillRect(x*TILE,y*TILE + TILE/3,TILE,TILE/3);
+    }
+}
+
+Game.drawKey = function(x, y, key, ctx){
+    ctx.fillStyle = "#444";    
+    ctx.beginPath();
+    ctx.arc(x*TILE+HALF_TILE/2, y*TILE+HALF_TILE, HALF_TILE/2, 0, 2*Math.PI);
+    ctx.arc(x*TILE+HALF_TILE+HALF_TILE/2, y*TILE+HALF_TILE, HALF_TILE/2, 0, 2*Math.PI);
+    ctx.fillRect(x*TILE+HALF_TILE/2,y*TILE+HALF_TILE/2, HALF_TILE, HALF_TILE)
+    ctx.fill();
+    if(!key.triggered){
+        ctx.fillStyle = "red";
+        ctx.beginPath();
+        ctx.arc(x*TILE+HALF_TILE/2, y*TILE+HALF_TILE, HALF_TILE/3, 0, 2*Math.PI);
+        ctx.fill();
+    }else{
+        ctx.fillStyle = "lime";
+        ctx.beginPath();
+        ctx.arc(x*TILE+TILE-HALF_TILE/2, y*TILE+HALF_TILE, HALF_TILE/3, 0, 2*Math.PI);
+        ctx.fill();
+    }    
 }
 
 Game.drawExtraLife = function(ctx){    
@@ -447,14 +490,13 @@ Game.drawMap = function(ctx){
     
     for(var y=0; y<GRID_HEIGHT; y++){
         for(var x=0; x<GRID_WIDTH; x++){            
-            if(this.checkObstacle(x,y)){               
+            if(this.currentLevel.map[y].charAt(x) == "#"){ // wall
                 ctx.fillStyle = this.currentLevel.wallsColor;
                 ctx.roundRect(x*TILE,y*TILE,TILE-0.25,TILE-0.25, TILE/4);
                 ctx.fill();
                 ctx.fillStyle = "rgba(0,0,0,0.3)";
                 ctx.roundRect(x*TILE+TILE/8,y*TILE+TILE/8,TILE*0.7,TILE*0.7, TILE/8);                            
                 ctx.fill();
-
                 //ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
             }
         }
@@ -466,15 +508,28 @@ Game.checkPlayer = function(x,y){
 }
 
 Game.checkPill = function(x,y){
-    return this.pills[x] && this.pills[x][y] == 1;    
+    return this.objects.get(x,y) 
+        && this.objects.get(x,y).type == Objects.PILL
+        && this.objects.get(x,y).collected == false;    
+}
+
+Game.checkKey = function(x,y){
+    return this.objects.get(x,y) 
+        && this.objects.get(x,y).type == Objects.KEY;            
 }
 
 Game.checkExtraLife = function(x,y){
     return this.extraLife.active && this.extraLife.gx == x && this.extraLife.gy == y;    
 }
 
-Game.checkObstacle = function(x, y){
-    return this.currentLevel.map[y] && this.currentLevel.map[y].charAt(x) == '#';
+Game.checkObstacle = function(x, y){    
+    return (this.currentLevel.map[y] && this.currentLevel.map[y].charAt(x) == '#') || this.checkDoor(x, y);
+}
+
+Game.checkDoor = function(x, y){
+    return this.objects.get(x, y) 
+        && this.objects.get(x, y).type == Objects.DOOR
+        && this.objects.get(x, y).locked == true;
 }
 
 Game.checkEnemies = function(x, y, enemy){
@@ -552,6 +607,7 @@ Game.movePlayer = function(){
                 player.stucked = false;                  
             }else{
                 if(!player.stucked){
+                    SOUNDS.hit.volume = 0.5;
                     SOUNDS.hit.play();
                     player.stucked = true;
                 }
@@ -570,7 +626,7 @@ Game.movePlayer = function(){
                 SOUNDS.collect.volume = 0.1;
                 SOUNDS.collect.play();
                 this.pillsCollected++;
-                this.pills[player.gx][player.gy] = undefined;
+                this.objects.get(player.gx,player.gy).collected = true;
 
                 if(this.pillsCollected == this.currentLevel.pillsCount - 1){                    
                     var g = this.generateCoordinateOnEmptySpace();
@@ -594,6 +650,16 @@ Game.movePlayer = function(){
                 this.player.lifes++;
                 this.extraLife.active = false;
                 this.extraLife.collected = true;
+            }
+
+            if(this.checkKey(player.gx, player.gy)){                                            
+                var key = this.objects.get(player.gx, player.gy);                
+                if(!key.triggered){
+                    SOUNDS.door.play();
+                    key.triggered = true;                    
+                    var door = this.currentLevel.objects[key.door];
+                    this.objects.get(door.x, door.y).locked = false;                    
+                }
             }
         }        
     }
