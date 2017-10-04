@@ -5,10 +5,10 @@
  * @param {*} height The grid height
  * @author Rafael Odon <odon.rafael@gmail.com>
  */
-var Grid = function(width, height){
+function Grid(width, height){
     this.width = width;
     this.height = height;
-    this.objects = [];   
+    var objects = [];   
 }
 
 Grid.prototype.set = function(x, y, obj){
@@ -39,7 +39,7 @@ Grid.prototype.clearAll = function(){
 Grid.prototype.each = function(callBack){
     for(var y=0; y<this.height; y++){
         for(var x=0; x<this.width; x++){
-            if(this.objects[x][y]){
+            if(this.objects[x] && this.objects[x][y]){
                 callBack(this.objects[x][y]);
             }
         }

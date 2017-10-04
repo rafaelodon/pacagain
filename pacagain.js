@@ -167,6 +167,7 @@ Game.update = function(){
     if(this.currentScene == Scenes.GAME){
         this.moveEnemies();
         this.movePlayer();
+        this.updateDoors();
     }    
 }
 
@@ -188,12 +189,8 @@ Game.draw = function(){
 
     ctx.globalCompositeOperation='source-atop';
 
-    if(this.currentScene == Scenes.INTRO){
-
-        if(SOUNDS.bg1.paused){
-            SOUNDS.bg1.play();
-        }         
-            
+    if(this.currentScene == Scenes.INTRO){        
+        SOUNDS.bg1.play();
         this.drawBackground(ctx);        
         var dx = Math.sin(Loop.lastTime / 1000 * Math.PI) * TILE/2;
         this.drawPlayer({
@@ -208,12 +205,7 @@ Game.draw = function(){
         this.blinkText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);
 
     }else if(this.currentScene == Scenes.PRE_LEVEL){
-
-        if(SOUNDS.bg1.paused){
-            SOUNDS.bg2.pause();
-            SOUNDS.bg1.play();
-        }
-
+        SOUNDS.bg1.play();        
         this.clearCanvas(ctx);         
         this.displayDarkOverlay(ctx);                       
         this.displayText(ctx, "LEVEL "+this.currentLevelNumber+" of "+LEVELS.length, REAL_WIDTH / 2, REAL_HEIGHT / 4, TILE * 1.5 )
@@ -228,34 +220,22 @@ Game.draw = function(){
         this.blinkText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);                
 
     }else if(this.currentScene == Scenes.GAME){
-
-        if(SOUNDS.bg2.paused){
-            SOUNDS.bg1.pause();
-            SOUNDS.bg2.play();
-        }
-
+        SOUNDS.bg2.play();
         this.clearCanvas(ctx);
         this.drawEnemies(ctx); 
         this.drawExtraLife(ctx);       
         this.drawPlayer(this.player, ctx);
         this.drawHeader(ctx);
 
-    }else if(this.currentScene == Scenes.GAME_OVER){
-        
-        SOUNDS.bg1.pause();
-        SOUNDS.bg2.pause();
-        
+    }else if(this.currentScene == Scenes.GAME_OVER){        
+        Sountrack.pause();        
         this.clearCanvas(ctx);   
         this.displayDarkOverlay(ctx);
         this.displayLifeCount(ctx); 
         this.displayText(ctx, "GAME OVER!", REAL_WIDTH / 2, REAL_HEIGHT / 2, TILE * 3);        
 
-    }else if(this.currentScene == Scenes.LEVEL_COMPLETED){
-
-        if(!SOUNDS.bg2.paused){
-            SOUNDS.bg2.pause();
-        }                
-
+    }else if(this.currentScene == Scenes.LEVEL_COMPLETED){        
+        Soundtrack.pause();
         this.drawBackground(ctx);
         this.displayText(ctx, "LEVEL COMPLETED!", REAL_WIDTH / 2, REAL_HEIGHT / 3, TILE * 2);                        
         this.drawPlayer({
@@ -270,10 +250,8 @@ Game.draw = function(){
 
     }else if(this.currentScene == Scenes.WIN){
 
-        if(!SOUNDS.bg2.paused){
-            SOUNDS.bg2.pause();            
-            SOUNDS.win.play();
-        }                
+        Soundtrack.pause();
+        SOUNDS.win.play();                        
 
         this.drawBackground(ctx);        
         this.displayText(ctx, "CONGRATULATIONS,", REAL_WIDTH / 2, REAL_HEIGHT / 3 - TILE * 2, TILE);                
@@ -418,11 +396,11 @@ Game.drawPill = function(x, y, ctx){
 
 Game.drawDoor = function(x, y, door, ctx){    
     if(door.orientation == Orientations.VERTICAL){
-        ctx.fillStyle = "#555";
-        ctx.fillRect(x*TILE + TILE/3,y*TILE,TILE/3,TILE);
+        ctx.fillStyle = door.color;
+        ctx.fillRect(x*TILE + TILE/3,y*TILE,TILE/3,TILE*door.opening);
     }else if(door.orientation == Orientations.HORIZONTAL){
-        ctx.fillStyle = "#555";
-        ctx.fillRect(x*TILE,y*TILE + TILE/3,TILE,TILE/3);
+        ctx.fillStyle = door.color;
+        ctx.fillRect(x*TILE,y*TILE + TILE/3,TILE*door.opening,TILE/3);
     }
 }
 
@@ -434,12 +412,12 @@ Game.drawKey = function(x, y, key, ctx){
     ctx.fillRect(x*TILE+HALF_TILE/2,y*TILE+HALF_TILE/2, HALF_TILE, HALF_TILE)
     ctx.fill();
     if(!key.triggered){
-        ctx.fillStyle = "red";
+        ctx.fillStyle = key.color;
         ctx.beginPath();
         ctx.arc(x*TILE+HALF_TILE/2, y*TILE+HALF_TILE, HALF_TILE/3, 0, 2*Math.PI);
         ctx.fill();
     }else{
-        ctx.fillStyle = "lime";
+        ctx.fillStyle = "black";
         ctx.beginPath();
         ctx.arc(x*TILE+TILE-HALF_TILE/2, y*TILE+HALF_TILE, HALF_TILE/3, 0, 2*Math.PI);
         ctx.fill();
@@ -548,7 +526,7 @@ Game.displayDarkOverlay = function(ctx){
 }
 
 Game.displayText = function(ctx, text, x, y, size, color){                
-    ctx.font = "bold "+size+"px sans-serif";                  
+    ctx.font = "bold "+size+"px Dosis";                  
     var realX = x - (ctx.measureText(text).width / 2);
     var realY = y + (size / 2);    
     
@@ -572,6 +550,18 @@ Game.displayLifeCount = function(ctx, x, y, scale){
         var y = (REAL_HEIGHT) / 3;
         ctx.fillText(text, x, y)
     }
+}
+
+Game.updateDoors = function(){
+    this.objects.each(function (obj){                
+        if(obj.type == Objects.DOOR && obj.opening < 1.0){            
+            obj.opening -= 0.05;
+            if(obj.opening <= 0){
+                obj.opening = 0;
+                obj.locked = false;
+            }            
+        }
+    });
 }
 
 Game.movePlayer = function(){
@@ -606,25 +596,22 @@ Game.movePlayer = function(){
 
                 player.stucked = false;                  
             }else{
-                if(!player.stucked){
-                    SOUNDS.hit.volume = 0.5;
-                    SOUNDS.hit.play();
+                if(!player.stucked){                    
+                    SOUNDS.hit.play(0.5);
                     player.stucked = true;
                 }
             }              
 
             if(this.checkEnemies(player.gx, player.gy)){            
-                SOUNDS.bg2.pause();
-                player.state = Player.HIT;            
-                SOUNDS.die.play();               
+                Soundtrack.pause();
+                SOUNDS.die.play();
+                player.state = Player.HIT;
                 player.lifes -= player.lifes > 0 ? 1 : 0;            
                 this.playing = false;            
             }
             
-            if(this.checkPill(player.gx, player.gy)){                        
-                SOUNDS.collect.currentTime = 0;
-                SOUNDS.collect.volume = 0.1;
-                SOUNDS.collect.play();
+            if(this.checkPill(player.gx, player.gy)){                                                        
+                SOUNDS.collect.play(0.1);
                 this.pillsCollected++;
                 this.objects.get(player.gx,player.gy).collected = true;
 
@@ -643,10 +630,8 @@ Game.movePlayer = function(){
                 }                
             }
 
-            if(this.checkExtraLife(player.gx, player.gy)){
-                SOUNDS.collect.currentTime = 0;
-                SOUNDS.collect.volume = 0.1;
-                SOUNDS.collect.play();
+            if(this.checkExtraLife(player.gx, player.gy)){                                
+                SOUNDS.collect.play(0.1);
                 this.player.lifes++;
                 this.extraLife.active = false;
                 this.extraLife.collected = true;
@@ -656,9 +641,10 @@ Game.movePlayer = function(){
                 var key = this.objects.get(player.gx, player.gy);                
                 if(!key.triggered){
                     SOUNDS.door.play();
-                    key.triggered = true;                    
-                    var door = this.currentLevel.objects[key.door];
-                    this.objects.get(door.x, door.y).locked = false;                    
+                    key.triggered = true;                                        
+                    var refDoor = this.currentLevel.objects[key.door];
+                    var door = this.objects.get(refDoor.x, refDoor.y);
+                    door.opening -= 0.1;
                 }
             }
         }        

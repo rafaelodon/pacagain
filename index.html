@@ -4,7 +4,7 @@
         <title>Pac-Again - By Rafael Odon</title>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />        
-        <style>
+        <style>            
             body{
                 background: black;
                 color: white;
@@ -12,15 +12,26 @@
                 padding: 0px;
                 overflow: hidden;
             }
+            @font-face {
+                font-family: 'Dosis';
+                src: url('fonts/Dosis-Regular.ttf');
+            }
+            @font-face {
+                font-family: 'Dosis';
+                src: url('fonts/Dosis-Bold.ttf');
+                font-weight: bold;
+            }
         </style>
     </head>
-    <body>        
+    <body>                
         <canvas id="canvas" style="border: 1px solid black;  display: block; margin: 0 auto;"></canvas>                
         <div id="credits" style="text-align: center; font-family: sans-serif; font-size: 0.7em">
             Game by Rafael Odon de Alencar (odon.rafael@gmail.com).<br/> 
             Sound FX by <a href="https://freesound.org/people/LittleRobotSoundFactory/packs/16681/">LittleRobotSoundFactory</a>. <br/>
             Soundtrack by <a href="https://freesound.org/people/Clinthammer/packs/11343/">Clinthammer</a>
         </div>            
+        <script type="text/javascript" src="roundrect.js"></script>                        
+        <script type="text/javascript" src="sound.js"></script>                        
         <script type="text/javascript" src="grid.js"></script>                        
         <script type="text/javascript" src="directions.js"></script>                        
         <script type="text/javascript" src="loop.js"></script>                        
