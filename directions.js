@@ -14,7 +14,8 @@ var Directions = {
         { dx: 0, dy: 1}, // down    
         { dx: -1, dy: 0}, // left        
         { dx: 0, dy: -1}, // up    
-    ]
+    ],
+    NAMES : ["right","down","left","up"]
 }
 
 Directions.oppositeDirection = function(obj){

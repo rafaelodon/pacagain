@@ -14,9 +14,6 @@ var GRID_HEIGHT=26;
 var REAL_WIDTH=TILE*GRID_WIDTH;
 var REAL_HEIGHT=TILE*GRID_HEIGHT;
 
-//Levels objects described in levels.js
-var LEVELS = [LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5, LEVEL6];
-
 //scenes
 var Scenes = {
     INTRO : 0,
@@ -45,16 +42,11 @@ var Player = {
     size: 1 
 }
 
-//ghosts states
-var GHOST_CHASING = 1;
-var GHOST_EXPLORING = 2;
-var GHOST_STUCKED = 3;
-
 var Game = {    
     ctx : undefined,
     auxCanvas : undefined,
-    currentLevel : LEVELS[0],
     currentLevelNumber : 1,  
+    currentLevel : LEVELS[0],    
     overlay : {},
     player : Player,
     playing : true,    
@@ -114,7 +106,7 @@ Game.resetOverlay = function(){
 }
 
 Game.resetEnemies = function(){
-    this.enemies = JSON.parse(JSON.stringify(this.currentLevel.enemies));
+    this.enemies = this.currentLevel.enemies ? JSON.parse(JSON.stringify(this.currentLevel.enemies)) : [];
     this.enemies.forEach(function(enemy){
         enemy.x = enemy.gx * TILE + HALF_TILE;
         enemy.y = enemy.gy * TILE + HALF_TILE;        
@@ -210,13 +202,26 @@ Game.draw = function(){
         this.displayDarkOverlay(ctx);                       
         this.displayText(ctx, "LEVEL "+this.currentLevelNumber+" of "+LEVELS.length, REAL_WIDTH / 2, REAL_HEIGHT / 4, TILE * 1.5 )
         this.displayText(ctx, "LIFE x "+this.player.lifes, REAL_WIDTH / 2, REAL_HEIGHT / 3, TILE * 1.5, "red" )
-        this.drawEnemy({
-            x: REAL_WIDTH / 2,
-            y: REAL_HEIGHT / 5 * 3, 
-            state: GHOST_EXPLORING,
-            direction: Directions.LEFT,            
-            color: this.currentLevel.enemies[this.currentLevel.enemies.length - 1].color
-        }, ctx, TILE * 5);        
+        if(this.enemies.length > 0){
+            this.drawEnemy({
+                x: REAL_WIDTH / 2,
+                y: REAL_HEIGHT / 5 * 3, 
+                state: this.currentLevel.enemies[this.currentLevel.enemies.length - 1].state,
+                direction: Directions.LEFT,                            
+                color: this.currentLevel.enemies[this.currentLevel.enemies.length - 1].color
+            }, ctx, TILE * 5);
+        }else{
+            this.drawPlayer({
+                x: REAL_WIDTH / 2 + dx,
+                y: REAL_HEIGHT / 3,                
+                color: "yellow",
+                direction: Directions.LEFT,
+                state: Player.MOVING
+            },ctx,TILE * 6);
+        }
+        if(this.currentLevel.instruction){
+            this.displayText(ctx, this.currentLevel.instruction, REAL_WIDTH / 2, (REAL_HEIGHT / 4)*3, TILE, "red");
+        }
         this.blinkText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);                
 
     }else if(this.currentScene == Scenes.GAME){
@@ -228,7 +233,7 @@ Game.draw = function(){
         this.drawHeader(ctx);
 
     }else if(this.currentScene == Scenes.GAME_OVER){        
-        Sountrack.pause();        
+        Soundtrack.pause();        
         this.clearCanvas(ctx);   
         this.displayDarkOverlay(ctx);
         this.displayLifeCount(ctx); 
@@ -269,7 +274,7 @@ Game.draw = function(){
         for(var i=0; i<LEVELS[LEVELS.length-1].enemies.length; i++){
             var dx = Math.sin((Loop.lastTime+i*Loop.fps) / 500 * Math.PI) * TILE/2
             var enemy = LEVELS[LEVELS.length-1].enemies[i];
-            enemy.state = GHOST_CHASING;
+            enemy.state = GhostState.CHASING;
             enemy.direction = Directions.LEFT;
             enemy.x = REAL_WIDTH / 9 * (i+3) + dx;
             enemy.y = REAL_HEIGHT / 3 * 2;            
@@ -329,6 +334,7 @@ Game.resetPlayer = function(){
     this.player.y = 13 * TILE + HALF_TILE;
     this.player.state = Player.MOVING;
     this.player.size = 1;
+    this.player.direction = Directions.RIGHT;
 }
 
 Game.nextLevel = function(){
@@ -554,11 +560,11 @@ Game.displayLifeCount = function(ctx, x, y, scale){
 
 Game.updateDoors = function(){
     this.objects.each(function (obj){                
-        if(obj.type == Objects.DOOR && obj.opening < 1.0){            
-            obj.opening -= 0.05;
+        if(obj.type == Objects.DOOR && obj.opening < 1.0){                                    
+            obj.opening -= 0.01;
             if(obj.opening <= 0){
                 obj.opening = 0;
-                obj.locked = false;
+                obj.locked = false;                
             }            
         }
     });
@@ -615,11 +621,13 @@ Game.movePlayer = function(){
                 this.pillsCollected++;
                 this.objects.get(player.gx,player.gy).collected = true;
 
-                if(this.pillsCollected == this.currentLevel.pillsCount - 1){                    
-                    var g = this.generateCoordinateOnEmptySpace();
-                    this.extraLife.gx = g.x;
-                    this.extraLife.gy = g.y;
-                    this.extraLife.active = true;
+                if(this.currentLevel.extraLife){
+                    if(this.pillsCollected == this.currentLevel.pillsCount - 1){                    
+                        var g = this.generateCoordinateOnEmptySpace();
+                        this.extraLife.gx = g.x;
+                        this.extraLife.gy = g.y;
+                        this.extraLife.active = true;
+                    }
                 }
 
                 if(this.pillsCollected >= this.currentLevel.pillsCount){                    
@@ -678,7 +686,11 @@ Game.moveEnemies = function(){
     for(var i=0; i<this.enemies.length; i++){
         var enemy = this.enemies[i];        
         if(this.playing){
-            this.randomWalk(enemy);        
+            if(enemy.state == GhostState.DUMB){
+                this.dumbWalk(enemy);        
+            }else{
+                this.chaseWalk(enemy);        
+            }
         }            
     };
 }
@@ -690,55 +702,88 @@ Game.drawEnemies = function(ctx){
     };
 }
 
-Game.randomWalk = function(enemy){
-
-    var r = Math.random();
-
-    if((enemy.x - HALF_TILE) % TILE == 0 && (enemy.y - HALF_TILE) % TILE == 0){                                    
-
-        var dx = this.player.gx - enemy.gx;
-        var dy = this.player.gy - enemy.gy;
-        var distance = Math.sqrt(dx*dx + dy*dy);        
-        if(distance <= enemy.range){                                                                                
-            enemy.state = GHOST_CHASING;                        
-            if(dx*dx > dy*dy){                
-                if(dx > 0){
-                    enemy.direction = Directions.RIGHT;                                        
-                }else{
-                    enemy.direction = Directions.LEFT;                    
-                }
-            }else{
-                if(dy > 0){
-                    enemy.direction = Directions.DOWN;
-                    
-                }else{
-                    enemy.direction = Directions.UP;                    
-                }                
-            }          
-        }else{            
-            enemy.state = GHOST_EXPLORING;
-        }                
-
-        if(enemy.state && enemy.state == GHOST_EXPLORING){                        
-            if(r < 0.05){
-                Directions.nextDirection(enemy);        
-            }else if(r < 0.1){
-                Directions.previousDirection(enemy);
-            }        
-        }
-    }
-
+Game.dumbWalk = function(enemy){
+        
     var tries = 0;
-    while(true){                        
+    while(true){                                
         var destX = enemy.x + Directions.DELTA[enemy.direction].dx * TILE / 8 * enemy.speed;
         var destY = enemy.y + Directions.DELTA[enemy.direction].dy * TILE / 8 * enemy.speed;
 
         var gridX = parseInt((enemy.x + Directions.DELTA[enemy.direction].dx * (HALF_TILE + 0.5)) / TILE); 
         var gridY = parseInt((enemy.y + Directions.DELTA[enemy.direction].dy * (HALF_TILE + 0.5)) / TILE);
+        
+        if(!this.checkObstacle(gridX, gridY)){
+            enemy.x = destX;
+            enemy.y = destY;       
 
-        if(!this.checkObstacle(gridX, gridY)){                           
+            enemy.gx = gridX;
+            enemy.gy = gridY;       
+
+            break;
+        }else{            
+            Directions.nextDirection(enemy);            
+        }
+        tries++;
+        if(tries > 4){
+            break;
+        }
+    }    
+}
+
+Game.chaseWalk = function(enemy){
+
+    var r = Math.random();
+
+    if((enemy.x - HALF_TILE) % TILE == 0 && (enemy.y - HALF_TILE) % TILE == 0){                                    
+
+        var distance = this.distanceToPlayer(enemy.gx, enemy.gy);
+        if(distance <= enemy.range){                                                                                
+            if(enemy.state != GhostState.CHASING){
+                enemy.state = GhostState.CHASING;
+                enemy.visitedTiles = new Grid(GRID_WIDTH, GRID_HEIGHT);                                                                      
+            }
+        }else{            
+            if(enemy.state == GhostState.CHASING){
+                enemy.visitedTiles = undefined;                
+            }
+            enemy.state = GhostState.EXPLORING;                        
+        }                
+
+        if(enemy.state){
+            if(enemy.state == GhostState.EXPLORING){                        
+                if(r < 0.05){
+                    Directions.nextDirection(enemy);        
+                }else if(r < 0.1){
+                    Directions.previousDirection(enemy);
+                }        
+            }else if(enemy.state == GhostState.CHASING){
+                this.setNextChasingDirection(enemy)
+            }
+        }
+    }
+
+    var tries = 0;
+    while(true){                                
+        var destX = enemy.x + Directions.DELTA[enemy.direction].dx * TILE / 8 * enemy.speed;
+        var destY = enemy.y + Directions.DELTA[enemy.direction].dy * TILE / 8 * enemy.speed;
+
+        var gridX = parseInt((enemy.x + Directions.DELTA[enemy.direction].dx * (HALF_TILE + 0.5)) / TILE); 
+        var gridY = parseInt((enemy.y + Directions.DELTA[enemy.direction].dy * (HALF_TILE + 0.5)) / TILE);
+        
+        if(!this.checkObstacle(gridX, gridY)){
             enemy.x = destX;
             enemy.y = destY; 
+
+            if(enemy.state == GhostState.CHASING &&
+                (enemy.gx != gridX || enemy.gy != gridY)){
+                var visit = enemy.visitedTiles.get(gridX, gridY);                                
+                if(!visit){
+                    enemy.visitedTiles.set(gridX, gridY, { count: 1, time: Loop.lastTime});
+                }else{
+                    enemy.visitedTiles.set(gridX, gridY, { count: visit.count + 1, time: Loop.lastTime});
+                }                
+            }
+            
 
             enemy.gx = gridX;
             enemy.gy = gridY;       
@@ -758,6 +803,59 @@ Game.randomWalk = function(enemy){
     }
 }
 
+Game.distanceToPlayer = function(x, y){
+    var dx = this.player.gx - x;
+    var dy = this.player.gy - y;
+    return Math.sqrt(dx*dx + dy*dy);
+}
+
+Game.setNextChasingDirection = function(enemy){
+    var nextX = enemy.gx;
+    var nextY = enemy.gy;
+    var smallestDistance = Number.MAX_SAFE_INTEGER; 
+    for(var x=-1; x<=1; x++){
+        for(var y=-1; y<=1; y++){            
+            if((x+y) * (x+y) != 1){ //consider only the cross
+                continue;
+            }            
+
+            var ex = enemy.gx + x;
+            var ey = enemy.gy + y;
+            if(ex > 0 && ex > 0
+                && ex < GRID_WIDTH && ey < GRID_HEIGHT
+                && !this.checkObstacle(ex, ey)){
+                var distance = this.distanceToPlayer(ex, ey);                            
+                var visit = enemy.visitedTiles.get(ex, ey);
+                var visitCount = visit ? visit.count : 0;                
+                if(distance + visitCount < smallestDistance){
+                    nextX = ex;
+                    nextY = ey;
+                    smallestDistance = distance;
+                }                
+            }
+        }
+    }    
+    
+    this.ctx.fillStyle = "green";
+    this.ctx.fillRect(nextX*TILE, nextY*TILE, TILE, TILE);
+
+    var dx = nextX - enemy.gx;
+    var dy = nextY - enemy.gy;
+    if(dx*dx > dy*dy){
+        if(dx > 0){
+            enemy.direction = Directions.RIGHT;                                        
+        }else{
+            enemy.direction = Directions.LEFT;                    
+        }
+    }else{
+        if(dy > 0){
+            enemy.direction = Directions.DOWN;            
+        }else{
+            enemy.direction = Directions.UP;                    
+        }                
+    }    
+}
+
 Game.drawEnemy = function(enemy, ctx, scale){        
 
     if(scale == undefined){
@@ -770,8 +868,21 @@ Game.drawEnemy = function(enemy, ctx, scale){
     ctx.fill();
     
     ctx.fillRect(enemy.x - scale/2 , enemy.y - 1, scale, scale/2);    
-            
-    if(enemy.state == GHOST_EXPLORING){                
+
+    if(enemy.state == GhostState.DUMB){
+        ctx.fillStyle = "white";  
+        ctx.beginPath();
+        ctx.arc(enemy.x+0.70*scale - scale/2, enemy.y, scale/5, 0, Math.PI);        
+        ctx.arc(enemy.x+0.30*scale - scale/2, enemy.y, scale/5, 0, Math.PI);
+        ctx.fill();
+        ctx.fillStyle = "black";    
+        ctx.beginPath();
+        ctx.arc(enemy.x+0.70*scale + scale/2*(1.0 + Directions.DELTA[enemy.direction].dx/5) - scale, 
+            enemy.y-1+1*(1.0 + Directions.DELTA[enemy.direction].dy/5), scale/9, 0, Math.PI);
+        ctx.arc(enemy.x+0.30*scale + scale/2*(1.0 + Directions.DELTA[enemy.direction].dx/5) - scale, 
+            enemy.y-1+1*(1.0 + Directions.DELTA[enemy.direction].dy/5), scale/9, 0, Math.PI);
+        ctx.fill();
+    }else if(enemy.state == GhostState.EXPLORING){                
         ctx.fillStyle = "white";  
         ctx.beginPath();
         ctx.arc(enemy.x+0.70*scale - scale/2, enemy.y, scale/4, 0, 2*Math.PI);        
@@ -784,7 +895,7 @@ Game.drawEnemy = function(enemy, ctx, scale){
         ctx.arc(enemy.x+0.30*scale + scale/2*(1.0 + Directions.DELTA[enemy.direction].dx/5) - scale, 
             enemy.y+1*(1.0 + Directions.DELTA[enemy.direction].dy/5), scale/8, 0, 2*Math.PI);
         ctx.fill();        
-    }else if(enemy.state == GHOST_CHASING){
+    }else if(enemy.state == GhostState.CHASING){
         ctx.fillStyle = "white";    
         ctx.beginPath();
         ctx.arc(enemy.x+0.70*scale - scale/2, enemy.y, scale/4, Math.PI, 1.75*Math.PI, true);       
@@ -799,7 +910,7 @@ Game.drawEnemy = function(enemy, ctx, scale){
         ctx.arc(enemy.x+0.30*scale + scale/2*(1.0 + Directions.DELTA[enemy.direction].dx/5) - scale, 
             enemy.y+1*(1.0 + Directions.DELTA[enemy.direction].dy/5), scale/12, 0, 2*Math.PI);
         ctx.fill();    
-    }    
+    }
 }
 
 Game.drawPlayer = function(player, ctx, scale){

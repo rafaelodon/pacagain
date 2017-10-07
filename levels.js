@@ -10,10 +10,127 @@ var Orientations = {
     HORIZONTAL : 2
 }
 
-var LEVEL1 = {
-    pillsCount: 5,
+var GhostState = {
+    DUMB : 0,
+    CHASING : 1,
+    EXPLORING: 3    
+}
+
+var LEVEL0 = {        
+    wallsColor: "#990000",
+    instruction: "Collect all the pills to complete a level.",        
+    extraLife : false,    
+    map: [
+        "#########################",
+        "#########################",
+        "#########################",
+        "#########################",
+        "#########################",
+        "#########################",    
+        "#########################",
+        "#########################",    
+        "#########################",    
+        "#####               #####",    
+        "##### .   .   .   . #####",    
+        "#####               #####",    
+        "#####    #######    #####",    
+        "#####    #     #    #####",
+        "##### .  #     #  . #####",
+        "#####    #     #    #####",    
+        "#####    ### ###    #####",   
+        "#####               #####",    
+        "##### .   .   .   . #####",                
+        "#####               #####",    
+        "#########################", 
+        "#########################",    
+        "#########################",    
+        "#########################",
+        "#########################",
+        "#########################"
+    ],
+}
+
+var LEVEL1 = {        
+    wallsColor: "#990000",
+    instruction: "Don't touch dumb ghosts!",    
+    enemies : [
+        { id: 1, gx: 12, gy: 9, speed: 1, range: 6, direction: 0, color: "#888", state: GhostState.DUMB }, //red               
+        { id: 1, gx: 12, gy: 12, speed: 1, range: 6, direction: 2, color: "#888", state: GhostState.DUMB }, //red               
+    ], 
+    extraLife : false,    
+    map: [
+        "#########################",
+        "#########################",
+        "#########################",
+        "#########################",
+        "#########################",
+        "#########################",    
+        "#########################",
+        "#########################",    
+        "#########################",    
+        "####.       .       .####",    
+        "####  #############  ####",    
+        "####  #.         .#  ####",    
+        "####  #  ### ###  #  ####",    
+        "####  #  #     #  #  ####",
+        "####     #     #     ####",
+        "####  #  #     #  #  ####",    
+        "####  #  ### ###  #  ####",   
+        "####  #.         .#  ####",    
+        "####  #############  ####",                
+        "####.       .       .####",    
+        "#########################", 
+        "#########################",    
+        "#########################",    
+        "#########################",
+        "#########################",
+        "#########################"
+    ],
+}
+
+var LEVEL2 = {        
+    wallsColor: "#990000",
+    instruction: "Escape from chasing ghosts.",    
+    extraLife : false,    
     enemies: [
-        { id: 1, gx: 21, gy: 13, speed: 1, range: 5, direction: 0, color: "#F00" }, //red        
+        { id: 1, gx: 12, gy: 9, speed: 1, range: 6, direction: 1, color: "#F00", state: GhostState.CHASER }, //red        
+    ],
+    map: [
+        "#########################",
+        "#########################",
+        "#########################",
+        "#########################",
+        "#########################",
+        "#########################",    
+        "#########################",
+        "#########################",    
+        "#########################",    
+        "#####               #####",    
+        "##### . . . . . . . #####",    
+        "#####               #####",    
+        "##### .  ### ###  . #####",    
+        "#####    #     #    #####",
+        "##### .           . #####",
+        "#####    #     #    #####",    
+        "##### .  ### ###  . #####",   
+        "#####               #####",    
+        "##### . . . . . . . #####",                
+        "#####               #####",    
+        "#########################", 
+        "#########################",    
+        "#########################",    
+        "#########################",
+        "#########################",
+        "#########################"
+    ],
+}
+
+var LEVEL3 = {
+    pillsCount: 5,
+    instruction: "Unlock doors.",
+    extraLife: false,
+    enemies: [
+        { id: 1, gx: 21, gy: 13, speed: 1, range: 6, direction: 2, color: "#F00", state: GhostState.CHASER }, //red        
     ],
     wallsColor: "#990000",
     map: [
@@ -28,11 +145,11 @@ var LEVEL1 = {
         "#########################",    
         "#########################",    
         "#########################",    
-        "##   #             #   ##",    
+        "## . #             # . ##",    
         "##   #  #  ###  #  #   ##",    
         "## 2    #       #  1 . ##",
         "##   #  #  ###  #  #   ##",    
-        "##   #             #   ##",   
+        "## . #             # . ##",   
         "#########################",    
         "#########################",    
         "#########################",    
@@ -58,28 +175,97 @@ var LEVEL1 = {
             door: 1,
             triggered: false,
             color: "red"
+        }        
+    }
+}
+
+var LEVEL4 = {
+    pillsCount: 5,
+    instruction: "Unlock many doors.",
+    extraLife: false,
+    enemies: [
+        { id: 1, gx: 21, gy: 13, speed: 1, range: 6, direction: 2, color: "#F00", state: GhostState.CHASER  }, //red        
+        { id: 2, gx: 13, gy: 20, speed: 1, range: 6, direction: 2, color: "#888", state: GhostState.DUMB  }, 
+    ],
+    wallsColor: "#990000",
+    map: [
+        "#########################",
+        "#########################",
+        "#########################",
+        "#########################",
+        "#########################",                
+        "##########  .  ##########",    
+        "##########. 4 .##########",    
+        "##########     ##########",    
+        "############ ############",
+        "############1############",
+        "######             ######",        
+        "## . #             # . ##",    
+        "##   #  #  ###  #  #   ##",    
+        "##.2    #       #  5 . ##",
+        "##   #  #  ###  #  #   ##",    
+        "## . #             # . ##",   
+        "######             ######",        
+        "############3############",    
+        "############ ############",    
+        "#########      ##########",    
+        "######### . 6 . #########",    
+        "#########   .   #########",            
+        "#########       #########",            
+        "#########################",
+        "#########################",
+        "#########################"
+    ],
+    objects: {
+        1 : {
+            type : Objects.DOOR,
+            key: 2,
+            orientation: Orientations.HORIZONTAL,
+            locked: true,                                    
+            color: "red",
+            opening: 1.0
+        },
+        2 : {
+            type : Objects.KEY,
+            door: 1,
+            triggered: false,
+            color: "red"
         },
         3 : {
             type : Objects.DOOR,
             key: 4,
             orientation: Orientations.HORIZONTAL,
-            locked: true,
+            locked: true,                                    
             color: "lime",
-            opening: 1.0,
+            opening: 1.0
         },
         4 : {
             type : Objects.KEY,
             door: 3,
             triggered: false,
             color: "lime"
-        }  
+        },
+        5 : {
+            type : Objects.DOOR,
+            key: 6,
+            orientation: Orientations.VERTICAL,
+            locked: true,                                    
+            color: "blue",
+            opening: 1.0
+        },
+        6 : {
+            type : Objects.KEY,
+            door: 5,
+            triggered: false,
+            color: "blue"
+        }                
     }
 }
 
 var LEVEL1_B = {
     pillsCount: 5,
     enemies: [
-        { id: 1, gx: 2, gy: 8, speed: 1, range: 5, direction: 0, color: "#F00" }, //red        
+        { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
     ],
     wallsColor: "#990000",
     map: [
@@ -125,11 +311,11 @@ var LEVEL1_B = {
     }
 }
 
-var LEVEL2 = {
+var LEVEL2b = {
     pillsCount: 10,
     enemies: [
-        { id: 1, gx: 2, gy: 8, speed: 1, range: 5, direction: 0, color: "#F00" }, //red        
-        { id: 2, gx: 22, gy: 20, speed: 1, range: 5, direction: 1, color: "#0F0" }, //green   
+        { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
+        { id: 2, gx: 22, gy: 20, speed: 1, range: 6, direction: 1, color: "#0F0" }, //green   
     ],
     wallsColor: "#006600",
     map: [
@@ -162,12 +348,12 @@ var LEVEL2 = {
     ]
 }
 
-var LEVEL3 = {
+var LEVEL3b = {
     pillsCount: 15,
     enemies: [
-        { id: 1, gx: 2, gy: 8, speed: 1, range: 5, direction: 0, color: "#F00" }, //red        
-        { id: 2, gx: 22, gy: 20, speed: 1, range: 5, direction: 1, color: "#0F0" }, //green   
-        { id: 3, gx: 2, gy: 20, speed: 1, range: 5, direction: 2, color: "#00F" }, //blue
+        { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
+        { id: 2, gx: 22, gy: 20, speed: 1, range: 6, direction: 1, color: "#0F0" }, //green   
+        { id: 3, gx: 2, gy: 20, speed: 1, range: 6, direction: 2, color: "#00F" }, //blue
         
     ],
     wallsColor: "#003366",
@@ -201,13 +387,13 @@ var LEVEL3 = {
     ]
 }
 
-var LEVEL4 = {
+var LEVEL5 = {
     pillsCount: 20,
     enemies: [
-        { id: 1, gx: 2, gy: 8, speed: 1, range: 5, direction: 0, color: "#F00" }, //red        
-        { id: 2, gx: 22, gy: 20, speed: 1, range: 5, direction: 1, color: "#0F0" }, //green   
-        { id: 3, gx: 2, gy: 20, speed: 1, range: 5, direction: 2, color: "#00F" }, //blue
-        { id: 4, gx: 22, gy: 4, speed: 1, range: 5, direction: 3, color: "#F0F" }, //pink        
+        { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
+        { id: 2, gx: 22, gy: 20, speed: 1, range: 6, direction: 1, color: "#0F0" }, //green   
+        { id: 3, gx: 2, gy: 20, speed: 1, range: 6, direction: 2, color: "#00F" }, //blue
+        { id: 4, gx: 22, gy: 4, speed: 1, range: 6, direction: 3, color: "#F0F" }, //pink        
     ],
     wallsColor: "#660066",
     map: [
@@ -240,14 +426,14 @@ var LEVEL4 = {
     ]
 }
 
-var LEVEL5 = {
+var LEVEL6 = {
     pillsCount: 25,
     enemies: [
-        { id: 1, gx: 2, gy: 8, speed: 1, range: 5, direction: 0, color: "#F00" }, //red        
-        { id: 2, gx: 22, gy: 20, speed: 1, range: 5, direction: 1, color: "#0F0" }, //green   
-        { id: 3, gx: 2, gy: 20, speed: 1, range: 5, direction: 2, color: "#00F" }, //blue
-        { id: 4, gx: 1, gy: 23, speed: 1, range: 5, direction: 3, color: "#F0F" }, //pink        
-        { id: 5, gx: 1, gy: 12, speed: 1, range: 5, direction: 0, color: "#FF0" }, //yellow
+        { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
+        { id: 2, gx: 22, gy: 20, speed: 1, range: 6, direction: 1, color: "#0F0" }, //green   
+        { id: 3, gx: 2, gy: 20, speed: 1, range: 6, direction: 2, color: "#00F" }, //blue
+        { id: 4, gx: 1, gy: 23, speed: 1, range: 6, direction: 3, color: "#F0F" }, //pink        
+        { id: 5, gx: 1, gy: 12, speed: 1, range: 6, direction: 0, color: "#FF0" }, //yellow
     ],
     wallsColor: "#996600",
     map: [
@@ -280,15 +466,15 @@ var LEVEL5 = {
     ]
 }
 
-var LEVEL6 = {
+var LEVEL7 = {
     pillsCount : 30,
     enemies : [
-        { id: 1, gx: 1, gy: 2, speed: 1, range: 5, direction: 0, color: "#F00" }, //red        
-        { id: 2, gx: 23, gy: 2, speed: 1, range: 5, direction: 1, color: "#0F0" }, //green   
-        { id: 3, gx: 23, gy: 23, speed: 1, range: 5, direction: 2, color: "#00F" }, //blue
-        { id: 4, gx: 1, gy: 23, speed: 1, range: 5, direction: 3, color: "#F0F" }, //pink    
-        { id: 5, gx: 1, gy: 12, speed: 1, range: 5, direction: 0, color: "#FF0" }, //yellow
-        { id: 6, gx: 23, gy: 12, speed: 1, range: 5, direction: 1, color: "#0FF" }, //ciano        
+        { id: 1, gx: 1, gy: 2, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
+        { id: 2, gx: 23, gy: 2, speed: 1, range: 6, direction: 1, color: "#0F0" }, //green   
+        { id: 3, gx: 23, gy: 23, speed: 1, range: 6, direction: 2, color: "#00F" }, //blue
+        { id: 4, gx: 1, gy: 23, speed: 1, range: 6, direction: 3, color: "#F0F" }, //pink    
+        { id: 5, gx: 1, gy: 12, speed: 1, range: 6, direction: 0, color: "#FF0" }, //yellow
+        { id: 6, gx: 23, gy: 12, speed: 1, range: 6, direction: 1, color: "#0FF" }, //ciano        
     ],
     wallsColor: "#006666",
     map : [    
@@ -320,3 +506,5 @@ var LEVEL6 = {
         "#########################"
     ]
 }
+
+var LEVELS = [LEVEL0, LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5, LEVEL6, LEVEL7];

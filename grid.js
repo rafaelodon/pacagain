@@ -8,7 +8,7 @@
 function Grid(width, height){
     this.width = width;
     this.height = height;
-    var objects = [];   
+    this.objects = [];   
 }
 
 Grid.prototype.set = function(x, y, obj){
