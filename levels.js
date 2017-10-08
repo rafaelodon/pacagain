@@ -1,25 +1,10 @@
-var Objects = {
-    PILL : 0,
-    DOOR : 1,    
-    KEY : 2,
-    LIFE : 3    
-}
+var LEVELS = new Array();
 
-var Orientations = {
-    VERTICAL : 1,
-    HORIZONTAL : 2
-}
-
-var GhostState = {
-    DUMB : 0,
-    CHASING : 1,
-    EXPLORING: 3    
-}
-
-var LEVEL0 = {        
+LEVELS.push({        
     wallsColor: "#990000",
-    instruction: "Collect all the pills to complete a level.",        
+    instruction: "Simply collect all pills.",        
     extraLife : false,    
+    enemies :  [],
     map: [
         "#########################",
         "#########################",
@@ -48,14 +33,14 @@ var LEVEL0 = {
         "#########################",
         "#########################"
     ],
-}
+});
 
-var LEVEL1 = {        
+LEVELS.push({        
     wallsColor: "#990000",
-    instruction: "Don't touch dumb ghosts!",    
+    instruction: "Avoid hitting a ghost!",    
     enemies : [
-        { id: 1, gx: 12, gy: 9, speed: 1, range: 6, direction: 0, color: "#888", state: GhostState.DUMB }, //red               
-        { id: 1, gx: 12, gy: 12, speed: 1, range: 6, direction: 2, color: "#888", state: GhostState.DUMB }, //red               
+        new Ghost(1, 12, 9, { direction: Directions.RIGHT }),
+        new Ghost(2, 12, 11, { direction : Directions.LEFT, clockwise: false})        
     ], 
     extraLife : false,    
     map: [
@@ -86,14 +71,14 @@ var LEVEL1 = {
         "#########################",
         "#########################"
     ],
-}
+});
 
-var LEVEL2 = {        
+LEVELS.push({        
     wallsColor: "#990000",
-    instruction: "Escape from chasing ghosts.",    
+    instruction: "Run away from smart ghosts.",    
     extraLife : false,    
-    enemies: [
-        { id: 1, gx: 12, gy: 9, speed: 1, range: 6, direction: 1, color: "#F00", state: GhostState.CHASER }, //red        
+    enemies: [        
+        new Ghost(1, 12, 9, { color: Colors.RED, state: GhostState.EXPLORING }),
     ],
     map: [
         "#########################",
@@ -123,14 +108,14 @@ var LEVEL2 = {
         "#########################",
         "#########################"
     ],
-}
+});
 
-var LEVEL3 = {
+LEVELS.push({
     pillsCount: 5,
-    instruction: "Unlock doors.",
+    instruction: "Unlock the door.",
     extraLife: false,
     enemies: [
-        { id: 1, gx: 21, gy: 13, speed: 1, range: 6, direction: 2, color: "#F00", state: GhostState.CHASER }, //red        
+        new Ghost(1, 21, 13, { color: Colors.RED, state: GhostState.EXPLORING})
     ],
     wallsColor: "#990000",
     map: [
@@ -177,15 +162,16 @@ var LEVEL3 = {
             color: "red"
         }        
     }
-}
+});
 
-var LEVEL4 = {
+LEVELS.push({
     pillsCount: 5,
-    instruction: "Unlock many doors.",
+    instruction: "Examine the map...",
     extraLife: false,
     enemies: [
-        { id: 1, gx: 21, gy: 13, speed: 1, range: 6, direction: 2, color: "#F00", state: GhostState.CHASER  }, //red        
-        { id: 2, gx: 13, gy: 20, speed: 1, range: 6, direction: 2, color: "#888", state: GhostState.DUMB  }, 
+        new Ghost(1, 13, 20),
+        new Ghost(1, 13, 4, { direction: Directions.LEFT, clockwise: false }),
+        new Ghost(1, 21, 13, { color : Colors.RED, state: GhostState.EXPLORING }),
     ],
     wallsColor: "#990000",
     map: [
@@ -193,10 +179,10 @@ var LEVEL4 = {
         "#########################",
         "#########################",
         "#########################",
-        "#########################",                
-        "##########  .  ##########",    
-        "##########. 4 .##########",    
-        "##########     ##########",    
+        "#########       #########",                
+        "#########   .   #########",    
+        "######### . 4 . #########",    
+        "#########       #########",    
         "############ ############",
         "############1############",
         "######             ######",        
@@ -208,7 +194,7 @@ var LEVEL4 = {
         "######             ######",        
         "############3############",    
         "############ ############",    
-        "#########      ##########",    
+        "#########       #########",    
         "######### . 6 . #########",    
         "#########   .   #########",            
         "#########       #########",            
@@ -260,12 +246,13 @@ var LEVEL4 = {
             color: "blue"
         }                
     }
-}
+});
 
-var LEVEL1_B = {
+/*
+LEVELS.push({
     pillsCount: 5,
     enemies: [
-        { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
+        new Ghost(1, 2, 8, { color : Colors.RED, state: GhostState.EXPLORING })
     ],
     wallsColor: "#990000",
     map: [
@@ -309,9 +296,9 @@ var LEVEL1_B = {
             triggered: false
         }  
     }
-}
+});
 
-var LEVEL2b = {
+LEVELS.push({
     pillsCount: 10,
     enemies: [
         { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
@@ -346,9 +333,9 @@ var LEVEL2b = {
         "#########################",
         "#########################"
     ]
-}
+});
 
-var LEVEL3b = {
+LEVELS.push({
     pillsCount: 15,
     enemies: [
         { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
@@ -385,9 +372,9 @@ var LEVEL3b = {
         "#########################",
         "#########################"
     ]
-}
+});
 
-var LEVEL5 = {
+LEVELS.push({
     pillsCount: 20,
     enemies: [
         { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
@@ -424,9 +411,9 @@ var LEVEL5 = {
         "##                     ##",
         "#########################"
     ]
-}
+});
 
-var LEVEL6 = {
+LEVELS.push({
     pillsCount: 25,
     enemies: [
         { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
@@ -464,9 +451,9 @@ var LEVEL6 = {
         "##                     ##",
         "#########################"
     ]
-}
+});
 
-var LEVEL7 = {
+LEVELS.push({
     pillsCount : 30,
     enemies : [
         { id: 1, gx: 1, gy: 2, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
@@ -505,6 +492,5 @@ var LEVEL7 = {
         "#           #           #",
         "#########################"
     ]
-}
-
-var LEVELS = [LEVEL0, LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5, LEVEL6, LEVEL7];
+});
+*/

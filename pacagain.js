@@ -5,60 +5,23 @@
  * 
  * @author Rafael Odon <odon.rafael@gmail.com>
  */
-
-// constants
-var TILE=24;
-var HALF_TILE=TILE/2;
-var GRID_WIDTH=25;
-var GRID_HEIGHT=26;
-var REAL_WIDTH=TILE*GRID_WIDTH;
-var REAL_HEIGHT=TILE*GRID_HEIGHT;
-
-//scenes
-var Scenes = {
-    INTRO : 0,
-    PRE_LEVEL : 1,
-    GAME : 2,
-    GAME_OVER : 3,
-    LEVEL_COMPLETED : 4,
-    WIN : 5
-}
-
-var Player = {
-    //states
-    MOVING : 1, HIT : 2, DEAD : 3, COMPLETED : 4,
-
-    //attributes
-    x: 0, //real x
-    y: 0, //real y
-    gx: 0, //grid x
-    gy: 0, //grid y
-    speed: 1, 
-    direction: Directions.RIGHT, 
-    color: "#FF0",
-    lifes: 3, 
-    stucked: false,
-    state: this.MOVING,
-    size: 1 
-}
-
 var Game = {    
     ctx : undefined,
     auxCanvas : undefined,
-    currentLevelNumber : 1,  
-    currentLevel : LEVELS[0],    
+    currentLevelNumber : 5,  
+    currentLevel : LEVELS[4],    
     overlay : {},
-    player : Player,
+    player : new Player(12, 13),
     playing : true,    
     objects : new Grid(GRID_WIDTH, GRID_HEIGHT),
     pillsCollected : 0,
     lastKeyDirection : Directions.RIGHT,    
     currentScene : Scenes.INTRO,        
+    lifeCount : 3,
     extraLife : { active: false, collected: true, gx: 12, gy: 12}, //TODO: extra life    
 }
 
-Game.preRenderLevel = function(){
-    console.log("pre rendering...");
+Game.preRenderLevel = function(){    
     this.auxCanvas = document.createElement("canvas");
     this.auxCanvas.width = REAL_WIDTH;
     this.auxCanvas.height = REAL_HEIGHT;    
@@ -105,9 +68,9 @@ Game.resetOverlay = function(){
     };
 }
 
-Game.resetEnemies = function(){
-    this.enemies = this.currentLevel.enemies ? JSON.parse(JSON.stringify(this.currentLevel.enemies)) : [];
-    this.enemies.forEach(function(enemy){
+Game.resetEnemies = function(){            
+    this.currentLevel.enemies.forEach(function(enemy){
+        enemy.reset();
         enemy.x = enemy.gx * TILE + HALF_TILE;
         enemy.y = enemy.gy * TILE + HALF_TILE;        
     });
@@ -157,8 +120,8 @@ Game.resetPills = function(){
 
 Game.update = function(){
     if(this.currentScene == Scenes.GAME){
-        this.moveEnemies();
-        this.movePlayer();
+        this.updateGhosts();
+        this.player.update();
         this.updateDoors();
     }    
 }
@@ -185,13 +148,13 @@ Game.draw = function(){
         SOUNDS.bg1.play();
         this.drawBackground(ctx);        
         var dx = Math.sin(Loop.lastTime / 1000 * Math.PI) * TILE/2;
-        this.drawPlayer({
-                x: REAL_WIDTH / 2 + dx,
-                y: REAL_HEIGHT / 3,                
-                color: "yellow",
-                direction: Directions.LEFT,
-                state: Player.MOVING
-            },ctx,TILE * 6);
+
+        this.player.state = PlayerState.MOVING;
+        this.player.x = REAL_WIDTH / 2 + dx;
+        this.player.y = REAL_HEIGHT / 3;
+        this.player.direction = Directions.LEFT;                    
+        this.player.draw(ctx, TILE * 6);
+
         this.displayText(ctx, "PAC-AGAIN", REAL_WIDTH / 2, REAL_HEIGHT / 2 + TILE * 2, TILE * 3);                
         this.displayText(ctx, "by Rafael Odon", REAL_WIDTH / 2, REAL_HEIGHT / 2 + TILE * 5, TILE * 0.75 );
         this.blinkText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);
@@ -201,26 +164,22 @@ Game.draw = function(){
         this.clearCanvas(ctx);         
         this.displayDarkOverlay(ctx);                       
         this.displayText(ctx, "LEVEL "+this.currentLevelNumber+" of "+LEVELS.length, REAL_WIDTH / 2, REAL_HEIGHT / 4, TILE * 1.5 )
-        this.displayText(ctx, "LIFE x "+this.player.lifes, REAL_WIDTH / 2, REAL_HEIGHT / 3, TILE * 1.5, "red" )
-        if(this.enemies.length > 0){
-            this.drawEnemy({
-                x: REAL_WIDTH / 2,
-                y: REAL_HEIGHT / 5 * 3, 
-                state: this.currentLevel.enemies[this.currentLevel.enemies.length - 1].state,
-                direction: Directions.LEFT,                            
-                color: this.currentLevel.enemies[this.currentLevel.enemies.length - 1].color
-            }, ctx, TILE * 5);
+        this.displayText(ctx, "LIFE x "+this.lifeCount, REAL_WIDTH / 2, REAL_HEIGHT / 3, TILE * 1.5, "red" )
+        if(this.currentLevel.enemies.length > 0){            
+            var ghost = this.currentLevel.enemies[this.currentLevel.enemies.length - 1];
+            ghost.state = ghost.initialState.state;
+            ghost.x = REAL_WIDTH / 2;
+            ghost.y = REAL_HEIGHT / 5 * 3;            
+            ghost.draw(ctx, TILE * 5);
         }else{
-            this.drawPlayer({
-                x: REAL_WIDTH / 2 + dx,
-                y: REAL_HEIGHT / 3,                
-                color: "yellow",
-                direction: Directions.LEFT,
-                state: Player.MOVING
-            },ctx,TILE * 6);
+            this.player.state = PlayerState.MOVING;
+            this.player.x = REAL_WIDTH / 2;
+            this.player.y = REAL_HEIGHT / 5 * 3;
+            this.player.direction = Directions.LEFT;                    
+            this.player.draw(ctx, TILE * 5);            
         }
         if(this.currentLevel.instruction){
-            this.displayText(ctx, this.currentLevel.instruction, REAL_WIDTH / 2, (REAL_HEIGHT / 4)*3, TILE, "red");
+            this.displayText(ctx, "TIP: "+this.currentLevel.instruction, REAL_WIDTH / 2, (REAL_HEIGHT / 4)*3, TILE, Colors.CIANO);
         }
         this.blinkText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);                
 
@@ -229,7 +188,7 @@ Game.draw = function(){
         this.clearCanvas(ctx);
         this.drawEnemies(ctx); 
         this.drawExtraLife(ctx);       
-        this.drawPlayer(this.player, ctx);
+        this.player.draw(ctx, TILE);
         this.drawHeader(ctx);
 
     }else if(this.currentScene == Scenes.GAME_OVER){        
@@ -243,13 +202,12 @@ Game.draw = function(){
         Soundtrack.pause();
         this.drawBackground(ctx);
         this.displayText(ctx, "LEVEL COMPLETED!", REAL_WIDTH / 2, REAL_HEIGHT / 3, TILE * 2);                        
-        this.drawPlayer({
-            x: REAL_WIDTH / 2,
-            y: REAL_HEIGHT / 5 * 3,                
-            color: "yellow",
-            direction: Directions.LEFT,
-            state: Player.MOVING
-        },ctx,TILE * 4);
+        
+        this.player.state = PlayerState.MOVING;
+        this.player.x = REAL_WIDTH / 2;
+        this.player.y = REAL_HEIGHT / 5 * 3;
+        this.player.direction = Directions.LEFT;                    
+        this.player.draw(ctx, TILE * 5);            
 
         this.blinkText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);        
 
@@ -262,14 +220,14 @@ Game.draw = function(){
         this.displayText(ctx, "CONGRATULATIONS,", REAL_WIDTH / 2, REAL_HEIGHT / 3 - TILE * 2, TILE);                
         this.displayText(ctx, "YOU HAVE COMPLETED ALL LEVELS!", REAL_WIDTH / 2, REAL_HEIGHT / 3, TILE);                
         this.displayText(ctx, "THE END", REAL_WIDTH / 2, REAL_HEIGHT / 2, TILE * 2);                                
-        var dx = Math.sin(Loop.lastTime / 500 * Math.PI ) * TILE/4;
-        this.drawPlayer({
-                x: REAL_WIDTH / 9 + dx,
-                y: REAL_HEIGHT / 3 * 2,                
-                color: "yellow",
-                direction: Directions.LEFT,
-                state: Player.MOVING
-            },ctx,TILE * 2);
+
+        var dx = Math.sin(Loop.lastTime / 500 * Math.PI ) * TILE/4;        
+
+        this.player.state = PlayerState.MOVING;
+        this.player.x = REAL_WIDTH / 9 + dx;
+        this.player.y = REAL_HEIGHT / 3 * 2;
+        this.player.direction = Directions.LEFT;                    
+        this.player.draw(ctx, TILE * 2);            
 
         for(var i=0; i<LEVELS[LEVELS.length-1].enemies.length; i++){
             var dx = Math.sin((Loop.lastTime+i*Loop.fps) / 500 * Math.PI) * TILE/2
@@ -278,7 +236,7 @@ Game.draw = function(){
             enemy.direction = Directions.LEFT;
             enemy.x = REAL_WIDTH / 9 * (i+3) + dx;
             enemy.y = REAL_HEIGHT / 3 * 2;            
-            this.drawEnemy(enemy, ctx, TILE * 2);                   
+            enemy.draw(ctx, TILE * 2);                   
         } 
     }    
 }
@@ -287,7 +245,7 @@ Game.drawHeader = function(ctx){
     ctx.fillStyle = "#444"
     ctx.fillRect(0,0,REAL_WIDTH,TILE)
     this.displayText(ctx, "LEVEL "+this.currentLevelNumber+" of "+LEVELS.length+
-    "        LIFES: "+this.player.lifes+
+    "        LIFES: "+this.lifeCount+
     "        PILLS: "+this.pillsCollected+" of "+this.currentLevel.pillsCount,            
         REAL_WIDTH / 2, TILE*0.4, TILE*0.8);
 }
@@ -326,15 +284,15 @@ Game.continueOnKeyOrTouch = function(){
 }
 
 Game.resetLevel = function(){
-    this.currentLevel = JSON.parse(JSON.stringify(LEVELS[this.currentLevelNumber - 1]));    
+    this.currentLevel = LEVELS[this.currentLevelNumber - 1];    
 }
 
 Game.resetPlayer = function(){
-    this.player.x = 12 * TILE + HALF_TILE;
-    this.player.y = 13 * TILE + HALF_TILE;
-    this.player.state = Player.MOVING;
-    this.player.size = 1;
-    this.player.direction = Directions.RIGHT;
+    this.player.reset();
+    this.player.game = Game;    
+    this.player.x = this.player.gx * TILE + HALF_TILE;
+    this.player.y = this.player.gy * TILE + HALF_TILE;    
+    this.lastKeyDirection = this.player.direction;
 }
 
 Game.nextLevel = function(){
@@ -517,8 +475,8 @@ Game.checkDoor = function(x, y){
 }
 
 Game.checkEnemies = function(x, y, enemy){
-    for(var i=0; i<this.enemies.length; i++){
-        var other = this.enemies[i];        
+    for(var i=0; i<this.currentLevel.enemies.length; i++){
+        var other = this.currentLevel.enemies[i];        
         if((enemy == undefined || enemy.id != other.id) &&
             other.gx == x && other.gy == y){
             return true;
@@ -551,7 +509,7 @@ Game.displayLifeCount = function(ctx, x, y, scale){
 
         ctx.fillStyle = "red";
         ctx.font = "30px sans-serif";
-        var text = "LIFE x "+this.player.lifes;
+        var text = "LIFE x "+this.lifeCount;
         var x = (REAL_WIDTH - ctx.measureText(text).width) / 2;
         var y = (REAL_HEIGHT) / 3;
         ctx.fillText(text, x, y)
@@ -570,386 +528,89 @@ Game.updateDoors = function(){
     });
 }
 
-Game.movePlayer = function(){
-
-    var player = this.player;
-    var destX, destY, gridX, gridY;
-
-    if(this.playing){
-        if(player.state == Player.MOVING){
-
-            //Only changes the direction when the player is centered on the next tile
-            if((player.x + HALF_TILE) % TILE == 0 && (player.y + HALF_TILE) % TILE == 0){                            
-                gridX = player.gx + Directions.DELTA[this.lastKeyDirection].dx;
-                gridY = player.gy + Directions.DELTA[this.lastKeyDirection].dy;
-                if(!this.checkObstacle(gridX, gridY)){
-                    player.direction = this.lastKeyDirection;
-                }
-            }
-            
-            destX = player.x + Directions.DELTA[player.direction].dx * TILE / 6;
-            destY = player.y + Directions.DELTA[player.direction].dy * TILE / 6;            
-
-            gridX = parseInt((player.x + Directions.DELTA[player.direction].dx * (HALF_TILE + 0.5)) / TILE); 
-            gridY = parseInt((player.y + Directions.DELTA[player.direction].dy * (HALF_TILE + 0.5)) / TILE);                                    
-
-            if(!this.checkObstacle(gridX, gridY)){                           
-                player.x = destX;
-                player.y = destY;
-
-                player.gx = gridX;
-                player.gy = gridY;
-
-                player.stucked = false;                  
-            }else{
-                if(!player.stucked){                    
-                    SOUNDS.hit.play(0.5);
-                    player.stucked = true;
-                }
-            }              
-
-            if(this.checkEnemies(player.gx, player.gy)){            
-                Soundtrack.pause();
-                SOUNDS.die.play();
-                player.state = Player.HIT;
-                player.lifes -= player.lifes > 0 ? 1 : 0;            
-                this.playing = false;            
-            }
-            
-            if(this.checkPill(player.gx, player.gy)){                                                        
-                SOUNDS.collect.play(0.1);
-                this.pillsCollected++;
-                this.objects.get(player.gx,player.gy).collected = true;
-
-                if(this.currentLevel.extraLife){
-                    if(this.pillsCollected == this.currentLevel.pillsCount - 1){                    
-                        var g = this.generateCoordinateOnEmptySpace();
-                        this.extraLife.gx = g.x;
-                        this.extraLife.gy = g.y;
-                        this.extraLife.active = true;
-                    }
-                }
-
-                if(this.pillsCollected >= this.currentLevel.pillsCount){                    
-                    player.state = Player.COMPLETED;                                                            
-                    SOUNDS.win.play();
-                    this.overlay.x = player.x;
-                    this.overlay.y = player.y;
-                }                
-            }
-
-            if(this.checkExtraLife(player.gx, player.gy)){                                
-                SOUNDS.collect.play(0.1);
-                this.player.lifes++;
-                this.extraLife.active = false;
-                this.extraLife.collected = true;
-            }
-
-            if(this.checkKey(player.gx, player.gy)){                                            
-                var key = this.objects.get(player.gx, player.gy);                
-                if(!key.triggered){
-                    SOUNDS.door.play();
-                    key.triggered = true;                                        
-                    var refDoor = this.currentLevel.objects[key.door];
-                    var door = this.objects.get(refDoor.x, refDoor.y);
-                    door.opening -= 0.1;
-                }
-            }
-        }        
-    }
-
-    if(player.state == Player.COMPLETED){
-        this.playing = false;                        
-        this.overlay.size *= 0.9;                
-        if(this.overlay.size <= TILE){            
-            this.resetOverlay();
-            this.currentScene = Scenes.LEVEL_COMPLETED;            
-        }
-
-    }else if(player.state == Player.DEAD){
-        if(player.lifes > 0){
-            this.currentScene = Scenes.PRE_LEVEL;        
-        }else{
-            this.currentScene = Scenes.GAME_OVER;        
-            SOUNDS.over.play();
-        }
-
-    }else if(player.state == Player.HIT){        
-        player.mouthOpening += 0.1; 
-        if(player.mouthOpening > 3){
-            player.state = Player.DEAD;
-        }
+Game.completeLevel= function(){
+    this.playing = false;                        
+    this.overlay.size *= 0.9;                
+    if(this.overlay.size <= TILE){            
+        this.resetOverlay();
+        this.currentScene = Scenes.LEVEL_COMPLETED;            
     }
 }
 
-Game.moveEnemies = function(){            
-    for(var i=0; i<this.enemies.length; i++){
-        var enemy = this.enemies[i];        
+Game.checkPlayerDeath = function(){
+    if(this.lifeCount > 0){
+        this.currentScene = Scenes.PRE_LEVEL;        
+    }else{
+        this.currentScene = Scenes.GAME_OVER;        
+        SOUNDS.over.play();
+    }
+}
+
+Game.triggerKey = function(x, y){
+    var key = this.objects.get(x, y);                
+    if(!key.triggered){
+        SOUNDS.door.play();
+        key.triggered = true;                                        
+        var refDoor = this.currentLevel.objects[key.door];
+        var door = this.objects.get(refDoor.x, refDoor.y);
+        door.opening -= 0.1;
+    }
+}
+
+Game.collectPill = function(x, y){
+    SOUNDS.collect.play(0.1);
+    this.pillsCollected++;
+    this.objects.get(x,y).collected = true;
+
+    if(this.currentLevel.extraLife){
+        if(this.pillsCollected == this.currentLevel.pillsCount - 1){                    
+            var g = this.generateCoordinateOnEmptySpace();
+            this.extraLife.gx = g.x;
+            this.extraLife.gy = g.y;
+            this.extraLife.active = true;
+        }
+    }
+
+    if(this.pillsCollected >= this.currentLevel.pillsCount){                    
+        this.player.state = PlayerState.COMPLETED;                                                            
+        SOUNDS.win.play();
+        this.overlay.x = this.player.x;
+        this.overlay.y = this.player.y;
+    }                
+}
+
+Game.collectExtraLife = function(){
+    SOUNDS.collect.play(0.1);
+    this.lifeCount++;
+    this.extraLife.active = false;
+    this.extraLife.collected = true;
+}
+
+Game.hitPlayerAndGhost = function(){
+    Soundtrack.pause();
+    SOUNDS.die.play();
+    this.player.state = PlayerState.HIT;
+    this.lifeCount -= this.lifeCount > 0 ? 1 : 0;            
+    this.playing = false;
+}
+
+Game.updateGhosts = function(){            
+    for(var i=0; i<this.currentLevel.enemies.length; i++){
+        var ghost = this.currentLevel.enemies[i];                
+        ghost.game = Game;        
         if(this.playing){
-            if(enemy.state == GhostState.DUMB){
-                this.dumbWalk(enemy);        
+            if(ghost.state == GhostState.DUMB){                
+                ghost.dumbWalk();
             }else{
-                this.chaseWalk(enemy);        
+                ghost.chaseWalk();        
             }
         }            
     };
 }
 
 Game.drawEnemies = function(ctx){            
-    for(var i=0; i<this.enemies.length; i++){
-        var enemy = this.enemies[i];
-        this.drawEnemy(enemy, ctx);
+    for(var i=0; i<this.currentLevel.enemies.length; i++){
+        var ghost = this.currentLevel.enemies[i];
+        ghost.draw(ctx, TILE);
     };
-}
-
-Game.dumbWalk = function(enemy){
-        
-    var tries = 0;
-    while(true){                                
-        var destX = enemy.x + Directions.DELTA[enemy.direction].dx * TILE / 8 * enemy.speed;
-        var destY = enemy.y + Directions.DELTA[enemy.direction].dy * TILE / 8 * enemy.speed;
-
-        var gridX = parseInt((enemy.x + Directions.DELTA[enemy.direction].dx * (HALF_TILE + 0.5)) / TILE); 
-        var gridY = parseInt((enemy.y + Directions.DELTA[enemy.direction].dy * (HALF_TILE + 0.5)) / TILE);
-        
-        if(!this.checkObstacle(gridX, gridY)){
-            enemy.x = destX;
-            enemy.y = destY;       
-
-            enemy.gx = gridX;
-            enemy.gy = gridY;       
-
-            break;
-        }else{            
-            Directions.nextDirection(enemy);            
-        }
-        tries++;
-        if(tries > 4){
-            break;
-        }
-    }    
-}
-
-Game.chaseWalk = function(enemy){
-
-    var r = Math.random();
-
-    if((enemy.x - HALF_TILE) % TILE == 0 && (enemy.y - HALF_TILE) % TILE == 0){                                    
-
-        var distance = this.distanceToPlayer(enemy.gx, enemy.gy);
-        if(distance <= enemy.range){                                                                                
-            if(enemy.state != GhostState.CHASING){
-                enemy.state = GhostState.CHASING;
-                enemy.visitedTiles = new Grid(GRID_WIDTH, GRID_HEIGHT);                                                                      
-            }
-        }else{            
-            if(enemy.state == GhostState.CHASING){
-                enemy.visitedTiles = undefined;                
-            }
-            enemy.state = GhostState.EXPLORING;                        
-        }                
-
-        if(enemy.state){
-            if(enemy.state == GhostState.EXPLORING){                        
-                if(r < 0.05){
-                    Directions.nextDirection(enemy);        
-                }else if(r < 0.1){
-                    Directions.previousDirection(enemy);
-                }        
-            }else if(enemy.state == GhostState.CHASING){
-                this.setNextChasingDirection(enemy)
-            }
-        }
-    }
-
-    var tries = 0;
-    while(true){                                
-        var destX = enemy.x + Directions.DELTA[enemy.direction].dx * TILE / 8 * enemy.speed;
-        var destY = enemy.y + Directions.DELTA[enemy.direction].dy * TILE / 8 * enemy.speed;
-
-        var gridX = parseInt((enemy.x + Directions.DELTA[enemy.direction].dx * (HALF_TILE + 0.5)) / TILE); 
-        var gridY = parseInt((enemy.y + Directions.DELTA[enemy.direction].dy * (HALF_TILE + 0.5)) / TILE);
-        
-        if(!this.checkObstacle(gridX, gridY)){
-            enemy.x = destX;
-            enemy.y = destY; 
-
-            if(enemy.state == GhostState.CHASING &&
-                (enemy.gx != gridX || enemy.gy != gridY)){
-                var visit = enemy.visitedTiles.get(gridX, gridY);                                
-                if(!visit){
-                    enemy.visitedTiles.set(gridX, gridY, { count: 1, time: Loop.lastTime});
-                }else{
-                    enemy.visitedTiles.set(gridX, gridY, { count: visit.count + 1, time: Loop.lastTime});
-                }                
-            }
-            
-
-            enemy.gx = gridX;
-            enemy.gy = gridY;       
-
-            break;
-        }else{            
-            if(r < 0.5){
-                Directions.nextDirection(enemy);
-            }else{
-                Directions.previousDirection(enemy);
-            }                    
-        }
-        tries++;
-        if(tries > 4){
-            break;
-        }
-    }
-}
-
-Game.distanceToPlayer = function(x, y){
-    var dx = this.player.gx - x;
-    var dy = this.player.gy - y;
-    return Math.sqrt(dx*dx + dy*dy);
-}
-
-Game.setNextChasingDirection = function(enemy){
-    var nextX = enemy.gx;
-    var nextY = enemy.gy;
-    var smallestDistance = Number.MAX_SAFE_INTEGER; 
-    for(var x=-1; x<=1; x++){
-        for(var y=-1; y<=1; y++){            
-            if((x+y) * (x+y) != 1){ //consider only the cross
-                continue;
-            }            
-
-            var ex = enemy.gx + x;
-            var ey = enemy.gy + y;
-            if(ex > 0 && ex > 0
-                && ex < GRID_WIDTH && ey < GRID_HEIGHT
-                && !this.checkObstacle(ex, ey)){
-                var distance = this.distanceToPlayer(ex, ey);                            
-                var visit = enemy.visitedTiles.get(ex, ey);
-                var visitCount = visit ? visit.count : 0;                
-                if(distance + visitCount < smallestDistance){
-                    nextX = ex;
-                    nextY = ey;
-                    smallestDistance = distance;
-                }                
-            }
-        }
-    }    
-    
-    this.ctx.fillStyle = "green";
-    this.ctx.fillRect(nextX*TILE, nextY*TILE, TILE, TILE);
-
-    var dx = nextX - enemy.gx;
-    var dy = nextY - enemy.gy;
-    if(dx*dx > dy*dy){
-        if(dx > 0){
-            enemy.direction = Directions.RIGHT;                                        
-        }else{
-            enemy.direction = Directions.LEFT;                    
-        }
-    }else{
-        if(dy > 0){
-            enemy.direction = Directions.DOWN;            
-        }else{
-            enemy.direction = Directions.UP;                    
-        }                
-    }    
-}
-
-Game.drawEnemy = function(enemy, ctx, scale){        
-
-    if(scale == undefined){
-        scale = TILE;
-    }
-
-    ctx.fillStyle = enemy.color;    
-    ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, scale/2, Math.PI, 0);
-    ctx.fill();
-    
-    ctx.fillRect(enemy.x - scale/2 , enemy.y - 1, scale, scale/2);    
-
-    if(enemy.state == GhostState.DUMB){
-        ctx.fillStyle = "white";  
-        ctx.beginPath();
-        ctx.arc(enemy.x+0.70*scale - scale/2, enemy.y, scale/5, 0, Math.PI);        
-        ctx.arc(enemy.x+0.30*scale - scale/2, enemy.y, scale/5, 0, Math.PI);
-        ctx.fill();
-        ctx.fillStyle = "black";    
-        ctx.beginPath();
-        ctx.arc(enemy.x+0.70*scale + scale/2*(1.0 + Directions.DELTA[enemy.direction].dx/5) - scale, 
-            enemy.y-1+1*(1.0 + Directions.DELTA[enemy.direction].dy/5), scale/9, 0, Math.PI);
-        ctx.arc(enemy.x+0.30*scale + scale/2*(1.0 + Directions.DELTA[enemy.direction].dx/5) - scale, 
-            enemy.y-1+1*(1.0 + Directions.DELTA[enemy.direction].dy/5), scale/9, 0, Math.PI);
-        ctx.fill();
-    }else if(enemy.state == GhostState.EXPLORING){                
-        ctx.fillStyle = "white";  
-        ctx.beginPath();
-        ctx.arc(enemy.x+0.70*scale - scale/2, enemy.y, scale/4, 0, 2*Math.PI);        
-        ctx.arc(enemy.x+0.30*scale - scale/2, enemy.y, scale/4, 0, 2*Math.PI);
-        ctx.fill();
-        ctx.fillStyle = "black";    
-        ctx.beginPath();
-        ctx.arc(enemy.x+0.70*scale + scale/2*(1.0 + Directions.DELTA[enemy.direction].dx/5) - scale, 
-            enemy.y+1*(1.0 + Directions.DELTA[enemy.direction].dy/5), scale/8, 0, 2*Math.PI);
-        ctx.arc(enemy.x+0.30*scale + scale/2*(1.0 + Directions.DELTA[enemy.direction].dx/5) - scale, 
-            enemy.y+1*(1.0 + Directions.DELTA[enemy.direction].dy/5), scale/8, 0, 2*Math.PI);
-        ctx.fill();        
-    }else if(enemy.state == GhostState.CHASING){
-        ctx.fillStyle = "white";    
-        ctx.beginPath();
-        ctx.arc(enemy.x+0.70*scale - scale/2, enemy.y, scale/4, Math.PI, 1.75*Math.PI, true);       
-        ctx.fill();
-        ctx.beginPath(); 
-        ctx.arc(enemy.x+0.30*scale - scale/2, enemy.y, scale/4, 1.25*Math.PI, 0, true);
-        ctx.fill();
-        ctx.fillStyle = "black";    
-        ctx.beginPath();
-        ctx.arc(enemy.x+0.70*scale + scale/2*(1.0 + Directions.DELTA[enemy.direction].dx/5) - scale, 
-            enemy.y+1*(1.0 + Directions.DELTA[enemy.direction].dy/5), scale/12, 0, 2*Math.PI);
-        ctx.arc(enemy.x+0.30*scale + scale/2*(1.0 + Directions.DELTA[enemy.direction].dx/5) - scale, 
-            enemy.y+1*(1.0 + Directions.DELTA[enemy.direction].dy/5), scale/12, 0, 2*Math.PI);
-        ctx.fill();    
-    }
-}
-
-Game.drawPlayer = function(player, ctx, scale){
-
-    if(scale == undefined){
-        scale = TILE;
-    }
-
-    ctx.fillStyle = player.color;    
-    
-    var archStart = 0;
-    var archEnd = 0;
-
-    if(player.direction == Directions.RIGHT){        
-        archStart = 1;
-        archEnd = 0;
-    }
-
-    if(player.direction == Directions.LEFT){
-        archStart = 0;
-        archEnd = 1;
-    }
-
-    if(player.direction == Directions.DOWN){
-        archStart = 1.5;
-        archEnd = 0.5;
-    }
-
-    if(player.direction == Directions.UP){
-        archStart = 0.5;
-        archEnd = 1.5;
-    }    
-
-    if(player.state == Player.MOVING){        
-        player.mouthOpening = (Math.sin(Loop.lastTime / 333 * Math.PI) / 2 + 0.5);        
-    }
-        
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, scale/2, Math.PI * archStart, -player.mouthOpening + Math.PI * archEnd);    
-    ctx.arc(player.x, player.y, scale/2, Math.PI * archStart, +player.mouthOpening + Math.PI * archEnd, true);
-    ctx.fill();          
 }
