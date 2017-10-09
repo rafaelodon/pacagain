@@ -244,5 +244,9 @@ Ghost.prototype.draw = function(ctx, scale){
             this.y+1*(1.0 + Directions.DELTA[this.direction].dy/5), scale/12, 0, 2*Math.PI);
         ctx.fill();    
     }
+
+    //debug point
+    //ctx.fillStyle = "red";
+    //ctx.fillRect(this.x, this.y, TILE/8, TILE/8);            
 }
     

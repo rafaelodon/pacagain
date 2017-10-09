@@ -248,61 +248,13 @@ LEVELS.push({
     }
 });
 
-/*
-LEVELS.push({
-    pillsCount: 5,
-    enemies: [
-        new Ghost(1, 2, 8, { color : Colors.RED, state: GhostState.EXPLORING })
-    ],
-    wallsColor: "#990000",
-    map: [
-        "#########################",
-        "#########################",
-        "#########################",
-        "#########################",
-        "#########################",
-        "#########################",    
-        "#########################",
-        "#########################",    
-        "##...#            .....##",    
-        "##...1      #     ###..##",
-        "##...#     .#.      #..##",    
-        "######   #######    #..##",    
-        "##       #     #       ##",    
-        "##                     ##",    
-        "##       #     #       ##",    
-        "##..#    #######    #..##",    
-        "##..#      .#.     2#..##",    
-        "##..###     #     ###..##",    
-        "##.....           .....##",
-        "#########################",    
-        "#########################", 
-        "#########################",    
-        "#########################",    
-        "#########################",
-        "#########################",
-        "#########################"
-    ],
-    objects: {
-        1 : {
-            type : Objects.DOOR,
-            key: 2,
-            orientation: Orientations.VERTICAL,
-            locked: true,
-        },
-        2 : {
-            type : Objects.KEY,
-            door: 1,
-            triggered: false
-        }  
-    }
-});
-
 LEVELS.push({
     pillsCount: 10,
     enemies: [
-        { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
-        { id: 2, gx: 22, gy: 20, speed: 1, range: 6, direction: 1, color: "#0F0" }, //green   
+        new Ghost(0, 22, 8),
+        new Ghost(1, 12, 12, { direction: Directions.LEFT, clockwise: false}),
+        new Ghost(2, 2, 8, { color : Colors.RED, state: GhostState.EXPLORING }),
+        new Ghost(3, 22, 20, { color : Colors.GREEN, state: GhostState.EXPLORING }),
     ],
     wallsColor: "#006600",
     map: [
@@ -313,19 +265,19 @@ LEVELS.push({
         "#########################",
         "#########################",    
         "##                     ##",    
-        "##                     ##",    
-        "##  ##   #######   ##  ##",    
-        "##  ##             ##  ##",    
-        "##                     ##",    
+        "## ....  .......  .... ##",    
+        "## .##.  #######  .##. ##",    
+        "## .##.  .......  .##. ##",    
+        "## ....           .... ##",    
         "##       ### ###       ##",    
-        "##  #    #     #    #  ##",    
-        "##  #               #  ##",    
-        "##  #    #     #    #  ##",    
+        "## .#.   #     #   .#. ##",    
+        "## .#.             .#. ##",    
+        "## .#.   #     #   .#. ##",    
         "##       ### ###       ##",    
-        "##                     ##",    
-        "##  ##             ##  ##",    
-        "##  ##   #######   ##  ##",    
-        "##                     ##",           
+        "## ....           .... ##",    
+        "## .##.  .......  .##. ##",    
+        "## .##.  #######  .##. ##",    
+        "## ....  .......  .... ##",           
         "##                     ##",    
         "#########################",    
         "#########################",    
@@ -338,10 +290,9 @@ LEVELS.push({
 LEVELS.push({
     pillsCount: 15,
     enemies: [
-        { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
-        { id: 2, gx: 22, gy: 20, speed: 1, range: 6, direction: 1, color: "#0F0" }, //green   
-        { id: 3, gx: 2, gy: 20, speed: 1, range: 6, direction: 2, color: "#00F" }, //blue
-        
+        new Ghost(1, 2, 8, { color : Colors.RED, state: GhostState.EXPLORING }),
+        new Ghost(2, 22, 20, { color : Colors.GREEN, state: GhostState.EXPLORING }),
+        new Ghost(3, 2, 20, { color : Colors.BLUE, state: GhostState.EXPLORING }),                
     ],
     wallsColor: "#003366",
     map: [
@@ -377,10 +328,10 @@ LEVELS.push({
 LEVELS.push({
     pillsCount: 20,
     enemies: [
-        { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
-        { id: 2, gx: 22, gy: 20, speed: 1, range: 6, direction: 1, color: "#0F0" }, //green   
-        { id: 3, gx: 2, gy: 20, speed: 1, range: 6, direction: 2, color: "#00F" }, //blue
-        { id: 4, gx: 22, gy: 4, speed: 1, range: 6, direction: 3, color: "#F0F" }, //pink        
+        new Ghost(1, 2, 8, { color : Colors.RED, state: GhostState.EXPLORING }),        
+        new Ghost(2, 22, 20, { color : Colors.GREEN, state: GhostState.EXPLORING }),        
+        new Ghost(3, 2, 20, { color : Colors.BLUE, state: GhostState.EXPLORING }),        
+        new Ghost(4, 22, 4, { color : Colors.PINK, state: GhostState.EXPLORING }),        
     ],
     wallsColor: "#660066",
     map: [
@@ -416,11 +367,11 @@ LEVELS.push({
 LEVELS.push({
     pillsCount: 25,
     enemies: [
-        { id: 1, gx: 2, gy: 8, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
-        { id: 2, gx: 22, gy: 20, speed: 1, range: 6, direction: 1, color: "#0F0" }, //green   
-        { id: 3, gx: 2, gy: 20, speed: 1, range: 6, direction: 2, color: "#00F" }, //blue
-        { id: 4, gx: 1, gy: 23, speed: 1, range: 6, direction: 3, color: "#F0F" }, //pink        
-        { id: 5, gx: 1, gy: 12, speed: 1, range: 6, direction: 0, color: "#FF0" }, //yellow
+        new Ghost(1, 2, 8, { color : Colors.RED, state: GhostState.EXPLORING }),        
+        new Ghost(2, 22, 20, { color : Colors.GREEN, state: GhostState.EXPLORING }),        
+        new Ghost(3, 2, 20, { color : Colors.BLUE, state: GhostState.EXPLORING }),        
+        new Ghost(4, 1, 23, { color : Colors.PINK, state: GhostState.EXPLORING }),        
+        new Ghost(5, 1, 12, { color : Colors.YELLOW, state: GhostState.EXPLORING }),                
     ],
     wallsColor: "#996600",
     map: [
@@ -456,12 +407,12 @@ LEVELS.push({
 LEVELS.push({
     pillsCount : 30,
     enemies : [
-        { id: 1, gx: 1, gy: 2, speed: 1, range: 6, direction: 0, color: "#F00" }, //red        
-        { id: 2, gx: 23, gy: 2, speed: 1, range: 6, direction: 1, color: "#0F0" }, //green   
-        { id: 3, gx: 23, gy: 23, speed: 1, range: 6, direction: 2, color: "#00F" }, //blue
-        { id: 4, gx: 1, gy: 23, speed: 1, range: 6, direction: 3, color: "#F0F" }, //pink    
-        { id: 5, gx: 1, gy: 12, speed: 1, range: 6, direction: 0, color: "#FF0" }, //yellow
-        { id: 6, gx: 23, gy: 12, speed: 1, range: 6, direction: 1, color: "#0FF" }, //ciano        
+        new Ghost(1, 2, 8, { color : Colors.RED, state: GhostState.EXPLORING }),        
+        new Ghost(2, 22, 20, { color : Colors.GREEN, state: GhostState.EXPLORING }),        
+        new Ghost(3, 2, 20, { color : Colors.BLUE, state: GhostState.EXPLORING }),        
+        new Ghost(4, 1, 23, { color : Colors.PINK, state: GhostState.EXPLORING }),        
+        new Ghost(5, 1, 12, { color : Colors.YELLOW, state: GhostState.EXPLORING }),                
+        new Ghost(6, 23, 12, { color : Colors.CIANO, state: GhostState.EXPLORING }),                        
     ],
     wallsColor: "#006666",
     map : [    
@@ -493,4 +444,3 @@ LEVELS.push({
         "#########################"
     ]
 });
-*/

@@ -73,7 +73,7 @@ Player.prototype.update = function(){
                 }
             }              
 
-            if(this.game.checkEnemies(this.gx, this.gy)){            
+            if(this.game.detectPlayerGhostCollision()){            
                 this.game.hitPlayerAndGhost();
             }            
 
@@ -142,4 +142,8 @@ Player.prototype.draw = function(ctx, scale){
     ctx.arc(this.x, this.y, scale/2, Math.PI * archStart, -this.mouthOpening + Math.PI * archEnd);    
     ctx.arc(this.x, this.y, scale/2, Math.PI * archStart, +this.mouthOpening + Math.PI * archEnd, true);
     ctx.fill();          
+
+    //debug point
+    //ctx.fillStyle = "red";
+    //ctx.fillRect(this.x, this.y, TILE/8, TILE/8);            
 }

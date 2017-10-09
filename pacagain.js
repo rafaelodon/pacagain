@@ -8,8 +8,8 @@
 var Game = {    
     ctx : undefined,
     auxCanvas : undefined,
-    currentLevelNumber : 5,  
-    currentLevel : LEVELS[4],    
+    currentLevelNumber : 1,  
+    currentLevel : LEVELS[0],    
     overlay : {},
     player : new Player(12, 13),
     playing : true,    
@@ -53,7 +53,7 @@ Game.setCanvas = function(canvas){
 
 Game.resetAll = function(){
     this.resetOverlay();
-    this.resetPills();  
+    this.resetMapObjects();  
     this.resetLevel();
     this.resetEnemies();
     this.resetPlayer();
@@ -89,10 +89,21 @@ Game.resetDoors = function(){
     }
 }
 
-Game.resetPills = function(){
+Game.resetMapObjects = function(){
     
     this.objects.clearAll();
-    this.currentLevel.pillsCount = 0;
+
+    if(this.currentLevel.pillsCount){
+        for(var i=0 ;i<this.currentLevel.pillsCount; i++){
+            var p = this.generateCoordinateOnEmptySpace();
+            this.objects.set(p.x,p.y,{
+                type : Objects.PILL,
+                collected : false
+            });                            
+        }
+    }else{
+        this.currentLevel.pillsCount = 0;
+    }    
 
     for(var y=0; y<GRID_HEIGHT; y++){
         for(var x=0; x<GRID_WIDTH; x++){            
@@ -213,8 +224,7 @@ Game.draw = function(){
 
     }else if(this.currentScene == Scenes.WIN){
 
-        Soundtrack.pause();
-        SOUNDS.win.play();                        
+        SOUNDS.bg3.play();        
 
         this.drawBackground(ctx);        
         this.displayText(ctx, "CONGRATULATIONS,", REAL_WIDTH / 2, REAL_HEIGHT / 3 - TILE * 2, TILE);                
@@ -299,7 +309,7 @@ Game.nextLevel = function(){
     if(this.currentLevelNumber < LEVELS.length){                                
         this.currentLevelNumber++;        
         this.resetLevel();
-        this.resetPills();
+        this.resetMapObjects();
         this.resetEnemies();
         this.resetPlayer();
         this.pillsCollected = 0;
@@ -482,6 +492,25 @@ Game.checkEnemies = function(x, y, enemy){
             return true;
         }
     }
+}
+
+Game.detectPlayerGhostCollision = function(){
+    var ghost, dx, dy;
+    for(var i=0; i<this.currentLevel.enemies.length; i++){
+        ghost = this.currentLevel.enemies[i];        
+        dx = ghost.gx - this.player.gx;
+        dy = ghost.gy - this.player.gy;
+        //only check if it's one tile around
+        if(dx*dx <= 1 && dy*dy <= 1){            
+            if(this.player.x >= ghost.x - HALF_TILE &&
+                this.player.x <= ghost.x + HALF_TILE &&
+                this.player.y >= ghost.y - HALF_TILE &&
+                this.player.y <= ghost.y + HALF_TILE){
+                    return true;
+                }
+        }
+    }
+    return false;
 }
 
 Game.displayDarkOverlay = function(ctx){

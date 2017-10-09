@@ -7,6 +7,7 @@
 function GameSound(file, isSoundtrack){
     this.audio = new Audio(file);    
     this.isSoundtrack = isSoundtrack;
+    this.hasPlayed = false;
     
     if(this.isSoundtrack){            
         this.audio.addEventListener('ended', function() {
@@ -30,6 +31,13 @@ GameSound.prototype.play = function(volume){
         this.audio.currentTime = 0;
         this.audio.play();
     }
+}
+
+GameSound.prototype.playOnce = function(volume){
+    if(!this.hasPlayed){
+        this.play(volume);
+        this.hasPlayed = true;
+    }    
 }
 
 /**
@@ -62,4 +70,5 @@ var SOUNDS = {
     door: new GameSound("sound/door.wav"),
     bg1: new GameSound("sound/bg1.wav", true),
     bg2: new GameSound("sound/bg2.wav", true),
+    bg3: new GameSound("sound/bg3.wav", true),
 }
