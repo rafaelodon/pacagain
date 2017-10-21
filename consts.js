@@ -34,10 +34,23 @@ var Orientations = {
 }
 
 var Scenes = {
-    INTRO : 0,
-    PRE_LEVEL : 1,
-    GAME : 2,
-    GAME_OVER : 3,
-    LEVEL_COMPLETED : 4,
-    WIN : 5
+    INTRO : 0,    
+    SELECT_LEVEL : 1,
+    PRE_LEVEL : 2,
+    GAME : 3,
+    GAME_OVER : 4,
+    LEVEL_COMPLETED : 5,
+    WIN : 6    
+}
+
+var OverlayType = {
+    CIRCLE : 0,
+    FADE_OUT : 1,
+    FADE_IN : 2
+}
+
+var EasingType = {
+    LINEAR: 0,
+    EXP: 1,    
+    LOG: 2
 }

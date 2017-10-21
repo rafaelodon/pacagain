@@ -1,4 +1,5 @@
 var PlayerState = {
+    STOPPED: 0,
     MOVING : 1,
     HIT : 2,
     DEAD : 3,
@@ -37,18 +38,20 @@ Player.prototype.reset = function(){
 }
 
 Player.prototype.update = function(){
-        
+            
     var destX, destY, gridX, gridY;
 
     if(this.game.playing){
         if(this.state == PlayerState.MOVING){
 
             //Only changes the direction when the player is centered on the next tile
-            if((this.x + HALF_TILE) % TILE == 0 && (this.y + HALF_TILE) % TILE == 0){                            
-                gridX = this.gx + Directions.DELTA[this.game.lastKeyDirection].dx;
-                gridY = this.gy + Directions.DELTA[this.game.lastKeyDirection].dy;
-                if(!this.game.checkObstacle(gridX, gridY)){
-                    this.direction = this.game.lastKeyDirection;
+            if(typeof this.game.lastKeyDirection != "undefined"){                
+                if((this.x + HALF_TILE) % TILE == 0 && (this.y + HALF_TILE) % TILE == 0){                            
+                    gridX = this.gx + Directions.DELTA[this.game.lastKeyDirection].dx;
+                    gridY = this.gy + Directions.DELTA[this.game.lastKeyDirection].dy;
+                    if(!this.game.checkObstacle(gridX, gridY)){
+                        this.direction = this.game.lastKeyDirection;
+                    }
                 }
             }
             
@@ -134,7 +137,7 @@ Player.prototype.draw = function(ctx, scale){
         archEnd = 1.5;
     }    
 
-    if(this.state == PlayerState.MOVING){        
+    if(this.state == PlayerState.MOVING || this.state == PlayerState.STOPPED){        
         this.mouthOpening = (Math.sin(Loop.lastTime / 333 * Math.PI) / 2 + 0.5);        
     }
         

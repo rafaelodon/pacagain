@@ -15,10 +15,13 @@ var Game = {
     playing : true,    
     objects : new Grid(GRID_WIDTH, GRID_HEIGHT),
     pillsCollected : 0,
-    lastKeyDirection : Directions.RIGHT,    
-    currentScene : Scenes.INTRO,        
+    lastKeyDirection : undefined,    
+    currentScene : undefined,    
     lifeCount : 3,
     extraLife : { active: false, collected: true, gx: 12, gy: 12}, //TODO: extra life    
+    selectedLevel : 0,
+    targetLevel : 0,
+    levelsMap : undefined
 }
 
 Game.preRenderLevel = function(){    
@@ -59,13 +62,56 @@ Game.resetAll = function(){
     this.resetPlayer();
 }
 
-Game.resetOverlay = function(){
+Game.resetOverlay = function(){    
     this.overlay = { 
-        x: REAL_WIDTH / 2,
-        y: REAL_HEIGHT / 2,
-        size : REAL_WIDTH * 1,
-        opacity: 0
+        active: false,
+        x: undefined,
+        y: undefined,
+        startTime : undefined,
+        size : REAL_WIDTH,
+        alpha: 1.0,
+        duration: 1000
     };
+}
+
+Game.updateOverlay = function(){    
+    
+    if(this.overlay.active){        
+
+        if(typeof this.overlay.startTime == "undefined"){
+            this.overlay.startTime = Loop.lastTime;
+        }
+
+        var loopCount = (Loop.lastTime - this.overlay.startTime)/(this.overlay.duration/Loop.fps);
+        if(this.overlay.easing == EasingType.LOG){            
+            var percent = Math.log10(1 + (loopCount/Loop.fps) * (9));            
+
+        }else if(this.overlay.easing == EasingType.EXP){                        
+            var percent = Math.exp(loopCount*Math.E/Loop.fps - 1)/(Math.E - 1);
+
+        }else{
+            //LINEAR            
+            var percent = loopCount/Loop.fps;
+        }
+        
+        //var percent = 1 - (Math.pow((Loop.lastTime - this.overlay.startTime + 1), 0.99)/1000);            
+
+        if(this.overlay.type == OverlayType.CIRCLE){
+            this.overlay.size = REAL_WIDTH - (REAL_WIDTH * percent);
+        }else if(this.overlay.type == OverlayType.FADE_OUT){
+            this.overlay.alpha = 1 - percent;
+        }else if(this.overlay.type == OverlayType.FADE_IN){                        
+            this.overlay.alpha = percent;
+        }
+
+        if(percent >= 0.9999){            
+            this.overlay.active = false;
+            if(this.overlay.oncomplete){
+                console.log(Loop.lastTime - this.overlay.startTime);
+                this.overlay.oncomplete(this);                        
+            }
+        }
+    }
 }
 
 Game.resetEnemies = function(){            
@@ -93,7 +139,7 @@ Game.resetMapObjects = function(){
     
     this.objects.clearAll();
 
-    if(this.currentLevel.pillsCount){
+    if(typeof this.currentLevel.pillsCount == "undefined"){
         for(var i=0 ;i<this.currentLevel.pillsCount; i++){
             var p = this.generateCoordinateOnEmptySpace();
             this.objects.set(p.x,p.y,{
@@ -101,23 +147,27 @@ Game.resetMapObjects = function(){
                 collected : false
             });                            
         }
-    }else{
-        this.currentLevel.pillsCount = 0;
-    }    
+    }
+    this.currentLevel.pillsCount = 0;
+        
 
     for(var y=0; y<GRID_HEIGHT; y++){
         for(var x=0; x<GRID_WIDTH; x++){            
     
             var tile = this.currentLevel.map[y].charAt(x);
 
-            if(tile == "."){ // register pills
+            if(tile == "p"){ // register player position
+                this.player.ix = x;
+                this.player.iy = y;
+            }else if(tile == "."){ // register pills
                 this.objects.set(x,y,{
                     type : Objects.PILL,
                     collected : false
                 });                
                 this.currentLevel.pillsCount++;
 
-            }else if(tile >= '0' && tile <= '9'){ // register other objects
+            }else if(tile >= '0' && tile <= '9' ||
+                tile >= 'A' && tile <='Z'){ // register other objects
                 if(this.currentLevel.objects[tile]){                    
                     var obj = this.currentLevel.objects[tile];
                     obj.x = x;
@@ -130,11 +180,168 @@ Game.resetMapObjects = function(){
 }
 
 Game.update = function(){
+
+    this.updateOverlay();    
+
+    if(this.currentScene == undefined){
+        this.currentScene = Scenes.INTRO;
+        this.displayFadeOutOverlay();
+    }
+
     if(this.currentScene == Scenes.GAME){
         this.updateGhosts();
         this.player.update();
         this.updateDoors();
-    }    
+    }else if(this.currentScene == Scenes.SELECT_LEVEL){            
+        this.updateLevelsMap();        
+    }
+}
+
+Game.updateLevelsMap = function (){
+
+    if(typeof this.levelsMap == "undefined"){
+        this.levelsMap = new Array();
+        var that = this;
+        this.levelsMapLoop(function (i, x, y){            
+            that.levelsMap.push({
+                levelNumber: i,
+                x: x,
+                y: y                           
+            });
+        });
+        this.selectedLevel = this.currentLevelNumber - 1;
+        this.targetLevel = this.selectedLevel;
+        this.player.x = this.levelsMap[this.selectedLevel].x;
+        this.player.y = this.levelsMap[this.selectedLevel].y;
+        this.player.state = PlayerState.STOPPED;
+    }
+
+    var level = this.levelsMap[this.selectedLevel];
+    if(this.player.state == PlayerState.STOPPED){
+        this.player.x = level.x;
+        this.player.y = level.y;
+
+        if(typeof this.lastKeyDirection != "undefined"){            
+
+            var currentX = this.levelsMap[this.selectedLevel].x;
+            var currentY = this.levelsMap[this.selectedLevel].y;
+            
+            if(this.selectedLevel < LEVELS.length-1){
+                var nextX = this.levelsMap[this.selectedLevel+1].x;
+                var nextY = this.levelsMap[this.selectedLevel+1].y;
+
+            }
+            
+            if(this.selectedLevel > 0){
+                var prevX = this.levelsMap[this.selectedLevel-1].x;
+                var prevY = this.levelsMap[this.selectedLevel-1].y;
+
+            }
+            
+            if(this.lastKeyDirection == Directions.RIGHT){
+                if(nextX && nextX > currentX){                
+                    this.targetLevel = this.selectedLevel + 1;
+                    this.player.state = PlayerState.MOVING;                    
+                }else if(prevX && prevX > currentX){
+                    this.targetLevel = this.selectedLevel - 1;
+                    this.player.state = PlayerState.MOVING;
+                }
+
+            }else if(this.lastKeyDirection == Directions.LEFT){
+                if(nextX && nextX < currentX){                
+                    this.targetLevel = this.selectedLevel + 1;
+                    this.player.state = PlayerState.MOVING;                    
+                }else if(prevX && prevX < currentX){
+                    this.targetLevel = this.selectedLevel - 1;
+                    this.player.state = PlayerState.MOVING;
+                }
+
+            }else if(this.lastKeyDirection == Directions.DOWN){
+                if(nextY && nextY > currentY){                
+                    this.targetLevel = this.selectedLevel + 1;
+                    this.player.state = PlayerState.MOVING;                    
+                }
+            }else if(this.lastKeyDirection == Directions.UP){
+                if(prevY && prevY < currentY){                
+                    this.targetLevel = this.selectedLevel - 1;
+                    this.player.state = PlayerState.MOVING;                    
+                }
+            } 
+
+            if(this.player.state == PlayerState.MOVING){
+                SOUNDS.jump.play(0.25);
+            }            
+
+            this.player.direction = this.lastKeyDirection;            
+            this.lastKeyDirection = undefined;                
+        }
+    }   
+    
+    if(this.player.state == PlayerState.MOVING){      
+
+        var x1 = this.player.x;
+        var y1 = this.player.y;
+        
+        var x2 = this.levelsMap[this.targetLevel].x;
+        var y2 = this.levelsMap[this.targetLevel].y;
+
+        var dx = x2 - x1;
+        var dy = y2 - y1;
+
+        if(dx){
+            if(dx > 0) {
+                this.player.x += TILE / 4;                                
+            }
+            if(dx < 0) {
+                this.player.x -= TILE / 4;                
+            }
+        }else if(dy){
+            if(dy > 0) {
+                this.player.y += TILE / 4;                
+            }
+            if(dy < 0) {
+                this.player.y -= TILE / 4;            
+            } 
+        }
+
+        if((dx && dx*dx < TILE) || (dy && dy*dy < TILE)){
+            this.player.x = x2;      
+            this.player.y = y2;            
+            this.player.state = PlayerState.STOPPED;            
+            this.selectedLevel = this.targetLevel;            
+            this.lastKeyDirection = undefined;
+        }
+
+    }
+}
+
+Game.levelsMapLoop = function(callback){
+    var maxcols = 3;
+    var col = 0;
+    var row = 0;
+    var x, y;
+    for(var i=0; i<LEVELS.length; i++){                        
+        var x = (col+1) * REAL_WIDTH/maxcols - REAL_WIDTH/maxcols/2;
+        var y = REAL_HEIGHT/5 * (row+1);        
+
+        callback(i, x, y);
+
+        if(row%2 == 1){
+            col--;
+        }else{
+            col++;
+        }                                    
+
+        if(col == maxcols){
+            row++;    
+            col = 2;            
+        }
+
+        if(col < 0){
+            row++;
+            col = 0;
+        }
+    }
 }
 
 Game.draw = function(){        
@@ -147,15 +354,10 @@ Game.draw = function(){
 
     ctx.clearRect(0, 0, REAL_WIDTH, REAL_HEIGHT);
     
-    ctx.globalCompositeOperation='source-over';    
+    this.drawOverlayBefore(ctx);
 
-    ctx.beginPath();
-    ctx.arc(this.overlay.x, this.overlay.y, this.overlay.size, 0, Math.PI*2);    
-    ctx.fill();
-
-    ctx.globalCompositeOperation='source-atop';
-
-    if(this.currentScene == Scenes.INTRO){        
+    if(this.currentScene == Scenes.INTRO){              
+        
         SOUNDS.bg1.play();
         this.drawBackground(ctx);        
         var dx = Math.sin(Loop.lastTime / 1000 * Math.PI) * TILE/2;
@@ -170,7 +372,100 @@ Game.draw = function(){
         this.displayText(ctx, "by Rafael Odon", REAL_WIDTH / 2, REAL_HEIGHT / 2 + TILE * 5, TILE * 0.75 );
         this.blinkText(ctx, "PRESS ANY KEY...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 4, TILE);
 
-    }else if(this.currentScene == Scenes.PRE_LEVEL){
+    }else if(this.currentScene == Scenes.SELECT_LEVEL){
+
+        SOUNDS.bg3.play();
+
+        ctx.fillStyle = "rgb(51, 102, 0)";        
+
+        ctx.fillRect(0,0,GRID_WIDTH*TILE,GRID_HEIGHT*TILE);
+        
+        if(this.levelsMap){            
+            for(var i=0; i<this.levelsMap.length; i++){                                
+
+                var level = this.levelsMap[i]; 
+
+                if(this.selectedLevel == this.targetLevel 
+                    && this.selectedLevel == i){                    
+                    var grd=ctx.createRadialGradient(level.x,level.y,0,level.x,level.y,TILE*1.5);
+                    grd.addColorStop(0,"white");
+                    grd.addColorStop(1,"rgb(51, 102, 0)");
+                                        
+                    ctx.fillStyle=grd;
+                    ctx.beginPath();                    
+                    ctx.ellipse(level.x, level.y, TILE*2, TILE*2, 0, 0, Math.PI * 2);            
+                    ctx.fill();                    
+                }
+
+                ctx.fillStyle = "rgb(204, 153, 0)";
+                               
+                if(i > 0){
+                    ctx.strokeStyle = "rgb(204, 153, 0)";
+                    ctx.lineWidth = TILE;
+                    ctx.beginPath();
+                    ctx.moveTo(this.levelsMap[i-1].x, this.levelsMap[i-1].y);
+                    ctx.lineTo(level.x, level.y);                
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = "rgb(204, 153, 0)";
+                ctx.beginPath();
+                ctx.ellipse(level.x, level.y, TILE, TILE, 0, 0, Math.PI * 2);            
+                ctx.fill();
+            }                
+                   
+            for(var i=0; i<this.levelsMap.length; i++){                                
+                var level = this.levelsMap[i];                                 
+
+                if(!LEVELS[i].completed){
+                    var dx = Math.sin((Loop.lastTime + i*Loop.fps*i*Loop.fps) / 1000 * Math.PI) * HALF_TILE;
+                    
+                    ctx.fillStyle = "rgba(0,0,0,0.3)";
+                    ctx.beginPath();
+                    ctx.ellipse(level.x + dx, level.y - HALF_TILE, HALF_TILE, HALF_TILE / 3, 0, 0, Math.PI * 2);            
+                    ctx.fill();
+                
+                    this.displayText(ctx, i+1, level.x, level.y, TILE, "rgba(255,255,255,0.5)");                                                                        
+                }else{
+                    this.displayText(ctx, i+1, level.x, level.y, TILE, "rgba(0,0,0,0.2)");                                                                        
+                }
+                
+            }
+
+            for(var i=0; i<this.levelsMap.length; i++){                                
+                var level = this.levelsMap[i];                                 
+
+                if(!LEVELS[i].completed){
+                    var dx = Math.sin((Loop.lastTime + i*Loop.fps*i*Loop.fps) / 1000 * Math.PI) * HALF_TILE;
+
+                    var levelGhost = LEVELS[i].enemies[LEVELS[i].enemies.length - 1];
+                    var ghost = new Ghost(0, 1, 1);
+                    ghost.state = levelGhost.state;
+                    ghost.color = levelGhost.color;
+                    ghost.x = level.x + dx;
+                    ghost.y = level.y - TILE - HALF_TILE;
+                    ghost.draw(ctx, TILE);
+                }
+
+                if((this.targetLevel >= this.selectedLevel && this.selectedLevel == i) ||
+                    (this.targetLevel < this.selectedLevel && this.targetLevel == i)){
+                    ctx.fillStyle = "rgba(0,0,0,0.3)";
+                    ctx.beginPath();
+                    ctx.ellipse(this.player.x, this.player.y + HALF_TILE, HALF_TILE, HALF_TILE / 3, 0, 0, Math.PI * 2);            
+                    ctx.fill();
+        
+                    this.player.draw(ctx, TILE);  
+                }
+            }
+          
+        }
+        
+        this.displayText(ctx, "SELECT A LEVEL", REAL_WIDTH / 2, TILE, TILE*2);        
+
+        this.displayText(ctx, "Use arrows to navigate. Push space to select...", REAL_WIDTH / 2, REAL_HEIGHT - TILE*2, TILE * 0.75);        
+
+    }else if(this.currentScene == Scenes.PRE_LEVEL){        
+
         SOUNDS.bg1.play();        
         this.clearCanvas(ctx);         
         this.displayDarkOverlay(ctx);                       
@@ -209,7 +504,7 @@ Game.draw = function(){
         this.displayLifeCount(ctx); 
         this.displayText(ctx, "GAME OVER!", REAL_WIDTH / 2, REAL_HEIGHT / 2, TILE * 3);        
 
-    }else if(this.currentScene == Scenes.LEVEL_COMPLETED){        
+    }else if(this.currentScene == Scenes.LEVEL_COMPLETED){                
         Soundtrack.pause();
         this.drawBackground(ctx);
         this.displayText(ctx, "LEVEL COMPLETED!", REAL_WIDTH / 2, REAL_HEIGHT / 3, TILE * 2);                        
@@ -249,6 +544,33 @@ Game.draw = function(){
             enemy.draw(ctx, TILE * 2);                   
         } 
     }    
+
+    this.drawOverlayAfter(ctx);
+}
+
+Game.drawOverlayBefore = function(ctx){
+    if(this.overlay.active){
+        if(this.overlay.type == OverlayType.CIRCLE){            
+            ctx.globalCompositeOperation='source-over';
+            ctx.beginPath();
+            ctx.arc(this.overlay.x, this.overlay.y, this.overlay.size, 0, Math.PI*2);    
+            ctx.fill();
+            ctx.globalCompositeOperation='source-atop';            
+        }
+    }else{
+        ctx.globalCompositeOperation='source-over';
+    }
+}
+
+Game.drawOverlayAfter = function(ctx){
+    if(this.overlay.active){
+        if (this.overlay.type == OverlayType.FADE_IN 
+            || this.overlay.type == OverlayType.FADE_OUT){
+            
+            ctx.fillStyle = "rgba(0,0,0,"+this.overlay.alpha+")";
+            ctx.fillRect(0, 0, REAL_WIDTH, REAL_HEIGHT);
+        }
+    }
 }
 
 Game.drawHeader = function(ctx){
@@ -258,6 +580,20 @@ Game.drawHeader = function(ctx){
     "        LIFES: "+this.lifeCount+
     "        PILLS: "+this.pillsCollected+" of "+this.currentLevel.pillsCount,            
         REAL_WIDTH / 2, TILE*0.4, TILE*0.8);
+}
+
+Game.select = function(){    
+    if(this.currentScene == Scenes.SELECT_LEVEL){
+        if(this.selectedLevel == this.targetLevel){                        
+            SOUNDS.hit.play();
+            this.currentLevelNumber = this.selectedLevel + 1;
+            this.currentLevel = LEVELS[this.currentLevelNumber-1];
+            var that = this;
+            this.displayFadeInOverlay(function(that){                
+                that.prepareLevel();
+            });
+        }        
+    }
 }
 
 Game.moveUp = function(){
@@ -277,20 +613,27 @@ Game.moveLeft = function(){
 }
 
 Game.continueOnKeyOrTouch = function(){    
-    if(this.currentScene == Scenes.PRE_LEVEL){        
-        this.currentScene = Scenes.GAME;        
+    if(this.currentScene == Scenes.PRE_LEVEL){
+        this.currentScene = Scenes.GAME;
         this.resetEnemies();
         this.resetPlayer();
         this.playing = true;        
+
+        return true;
+
+    }else if(this.currentScene == Scenes.LEVEL_COMPLETED){                
+        this.levelsMap = undefined;
+        this.currentScene = Scenes.SELECT_LEVEL;        
+        this.displayFadeOutOverlay();
+        return true;
+
+    }else if(this.currentScene == Scenes.INTRO){        
+        this.currentScene = Scenes.SELECT_LEVEL;        
+
+        return true;
     }
 
-    if(this.currentScene == Scenes.LEVEL_COMPLETED){        
-        this.nextLevel();              
-    }
-
-    if(this.currentScene == Scenes.INTRO){        
-        this.currentScene = Scenes.PRE_LEVEL;        
-    }
+    return false;
 }
 
 Game.resetLevel = function(){
@@ -300,28 +643,31 @@ Game.resetLevel = function(){
 Game.resetPlayer = function(){
     this.player.reset();
     this.player.game = Game;    
-    this.player.x = this.player.gx * TILE + HALF_TILE;
-    this.player.y = this.player.gy * TILE + HALF_TILE;    
-    this.lastKeyDirection = this.player.direction;
+    this.player.x = this.player.ix * TILE + HALF_TILE;
+    this.player.y = this.player.iy * TILE + HALF_TILE;        
 }
 
 Game.nextLevel = function(){
     if(this.currentLevelNumber < LEVELS.length){                                
         this.currentLevelNumber++;        
-        this.resetLevel();
-        this.resetMapObjects();
-        this.resetEnemies();
-        this.resetPlayer();
-        this.pillsCollected = 0;
-        this.playing = true;
-        this.preRenderLevel();
-        this.extraLife.active = false;
-        this.currentScene = Scenes.PRE_LEVEL;
+        this.prepareLevel();
     }else{
         this.currentScene = Scenes.WIN;
     }  
 }
 
+Game.prepareLevel = function(){
+    this.resetLevel();
+    this.resetMapObjects();
+    this.resetEnemies();
+    this.resetPlayer();    
+    this.pillsCollected = 0;
+    this.playing = true;
+    this.preRenderLevel();
+    this.extraLife.active = false;
+    this.currentScene = Scenes.PRE_LEVEL;
+    this.displayFadeOutOverlay(function(){});
+}
 
 Game.generateCoordinateOnEmptySpace = function(){
     var x=y=0;
@@ -557,13 +903,40 @@ Game.updateDoors = function(){
     });
 }
 
-Game.completeLevel= function(){
-    this.playing = false;                        
-    this.overlay.size *= 0.9;                
-    if(this.overlay.size <= TILE){            
-        this.resetOverlay();
-        this.currentScene = Scenes.LEVEL_COMPLETED;            
+Game.completeLevel = function(){
+    if(this.playing){
+        this.playing = false;                                
+        this.currentLevel.completed = true;
+        var that = this;
+        this.displayCircleOverlay(this.player.x, this.player.y, function (that){            
+            that.currentScene = Scenes.LEVEL_COMPLETED;
+        });
     }
+}
+
+Game.displayCircleOverlay = function(x, y, oncomplete){
+    this.resetOverlay();
+    this.overlay.x = x;
+    this.overlay.y = y;
+    this.overlay.easing = EasingType.LOG;
+    this.overlay.active = true;
+    this.overlay.duration = 1000;
+    this.overlay.type = OverlayType.CIRCLE;
+    this.overlay.oncomplete = oncomplete;
+}
+
+Game.displayFadeInOverlay = function(oncomplete){    
+    this.resetOverlay();    
+    this.overlay.active = true;
+    this.overlay.type = OverlayType.FADE_IN;    
+    this.overlay.oncomplete = oncomplete;
+}
+
+Game.displayFadeOutOverlay = function(oncomplete){
+    this.resetOverlay();    
+    this.overlay.active = true;
+    this.overlay.type = OverlayType.FADE_OUT;    
+    this.overlay.oncomplete = oncomplete;
 }
 
 Game.checkPlayerDeath = function(){

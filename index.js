@@ -26,6 +26,12 @@ function keyDown(e) {
         }
     }
 
+    if(e.keyCode){
+        if(Game.continueOnKeyOrTouch()){
+            return;
+        }
+    }
+
     if (e.keyCode == '38') { //up
         window.scrollTo(0,0);
         e.preventDefault();
@@ -42,10 +48,9 @@ function keyDown(e) {
         window.scrollTo(0,0);
         e.preventDefault();
         Game.moveRight();
-    }
-
-    if(e.keyCode){
-        Game.continueOnKeyOrTouch();    
+    } else if (e.keyCode == '32') { //space
+        e.preventDefault();
+        Game.select();
     }
 }
 
