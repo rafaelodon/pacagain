@@ -21,15 +21,69 @@
                 src: url('fonts/Dosis-Bold.ttf');
                 font-weight: bold;
             }
+            #keys{
+                height: 15vw;
+                margin-bottom: 4vh;
+            }
+            #directions{                
+                float: left;
+                width: 49vw;    
+                text-align: center;                            
+            }
+            #left{
+                margin-right: 5vw;
+            }
+            button{
+                width: 5vw;
+                height: 5vw;
+                font-size: 3vw;
+                padding: 0px;
+                border-radius: 25%;
+                border: 0;
+                background: none;
+                box-shadow:none;
+                background-color: #888;
+                color: #333;
+            }
+            button:hover{
+                background-color: #AAA;
+                color: #111;
+            }
+            #spacer{
+                display: inline-block;
+                width: 5vw;
+                height: 5vw;
+            }
+            #actions{                
+                float: right;
+                width: 49vw;       
+                text-align: center;                   
+                padding-top: 5vw;
+            }
+            #select{
+                font-family: "Arial Black", Gadget, sans-serif;
+                font-weight: bold;
+            }
         </style>
     </head>
     <body>                
-        <canvas id="canvas" style="border: 1px solid black;  display: block; margin: 0 auto;"></canvas>                
+        <canvas id="canvas" style="border: 1px solid black;  display: block; margin: 0 auto;"></canvas>                        
+        <div id="keys">
+            <div id="directions">
+                <button id="up">🡹</button><br/>
+                <button id="left">🡸</button>                
+                <button id="right">🡺</button><br/>
+                <button id="down">🡻</button>
+            </div>
+            <div id="actions">
+                <button id="select">A</button>                
+            </div>
+        </div>
         <div id="credits" style="text-align: center; font-family: sans-serif; font-size: 0.7em">
-            Game by Rafael Odon de Alencar (odon.rafael@gmail.com).<br/> 
-            Sound FX by <a href="https://freesound.org/people/LittleRobotSoundFactory/packs/16681/">LittleRobotSoundFactory</a>. <br/>
-            Soundtrack by <a href="https://freesound.org/people/Clinthammer/packs/11343/">Clinthammer</a>
-        </div>            
+                Game by Rafael Odon de Alencar (odon.rafael@gmail.com).<br/> 
+                Sound FX by <a href="https://freesound.org/people/LittleRobotSoundFactory/packs/16681/">LittleRobotSoundFactory</a> | 
+                Soundtrack by <a href="https://freesound.org/people/Clinthammer/packs/11343/">Clinthammer</a>
+        </div>                    
         <script type="text/javascript" src="consts.js"></script>                        
         <script type="text/javascript" src="roundrect.js"></script>                        
         <script type="text/javascript" src="sound.js"></script>                        

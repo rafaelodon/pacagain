@@ -39,7 +39,7 @@ Game.preRenderLevel = function(){
 Game.setCanvas = function(canvas){              
     var scale = 1;      
     var scaleX = window.innerWidth / (GRID_WIDTH * TILE);
-    var scaleY = (window.innerHeight - 80) / (GRID_HEIGHT * TILE);
+    var scaleY = (window.innerHeight - (window.innerHeight/4)) / (GRID_HEIGHT * TILE);
     
     if(scaleX < scaleY){
         scale = scaleX;
@@ -375,94 +375,7 @@ Game.draw = function(){
     }else if(this.currentScene == Scenes.SELECT_LEVEL){
 
         SOUNDS.bg3.play();
-
-        ctx.fillStyle = "rgb(51, 102, 0)";        
-
-        ctx.fillRect(0,0,GRID_WIDTH*TILE,GRID_HEIGHT*TILE);
-        
-        if(this.levelsMap){            
-            for(var i=0; i<this.levelsMap.length; i++){                                
-
-                var level = this.levelsMap[i]; 
-
-                if(this.selectedLevel == this.targetLevel 
-                    && this.selectedLevel == i){                    
-                    var grd=ctx.createRadialGradient(level.x,level.y,0,level.x,level.y,TILE*1.5);
-                    grd.addColorStop(0,"white");
-                    grd.addColorStop(1,"rgb(51, 102, 0)");
-                                        
-                    ctx.fillStyle=grd;
-                    ctx.beginPath();                    
-                    ctx.ellipse(level.x, level.y, TILE*2, TILE*2, 0, 0, Math.PI * 2);            
-                    ctx.fill();                    
-                }
-
-                ctx.fillStyle = "rgb(204, 153, 0)";
-                               
-                if(i > 0){
-                    ctx.strokeStyle = "rgb(204, 153, 0)";
-                    ctx.lineWidth = TILE;
-                    ctx.beginPath();
-                    ctx.moveTo(this.levelsMap[i-1].x, this.levelsMap[i-1].y);
-                    ctx.lineTo(level.x, level.y);                
-                    ctx.stroke();
-                }
-
-                ctx.fillStyle = "rgb(204, 153, 0)";
-                ctx.beginPath();
-                ctx.ellipse(level.x, level.y, TILE, TILE, 0, 0, Math.PI * 2);            
-                ctx.fill();
-            }                
-                   
-            for(var i=0; i<this.levelsMap.length; i++){                                
-                var level = this.levelsMap[i];                                 
-
-                if(!LEVELS[i].completed){
-                    var dx = Math.sin((Loop.lastTime + i*Loop.fps*i*Loop.fps) / 1000 * Math.PI) * HALF_TILE;
-                    
-                    ctx.fillStyle = "rgba(0,0,0,0.3)";
-                    ctx.beginPath();
-                    ctx.ellipse(level.x + dx, level.y - HALF_TILE, HALF_TILE, HALF_TILE / 3, 0, 0, Math.PI * 2);            
-                    ctx.fill();
-                
-                    this.displayText(ctx, i+1, level.x, level.y, TILE, "rgba(255,255,255,0.5)");                                                                        
-                }else{
-                    this.displayText(ctx, i+1, level.x, level.y, TILE, "rgba(0,0,0,0.2)");                                                                        
-                }
-                
-            }
-
-            for(var i=0; i<this.levelsMap.length; i++){                                
-                var level = this.levelsMap[i];                                 
-
-                if(!LEVELS[i].completed){
-                    var dx = Math.sin((Loop.lastTime + i*Loop.fps*i*Loop.fps) / 1000 * Math.PI) * HALF_TILE;
-
-                    var levelGhost = LEVELS[i].enemies[LEVELS[i].enemies.length - 1];
-                    var ghost = new Ghost(0, 1, 1);
-                    ghost.state = levelGhost.state;
-                    ghost.color = levelGhost.color;
-                    ghost.x = level.x + dx;
-                    ghost.y = level.y - TILE - HALF_TILE;
-                    ghost.draw(ctx, TILE);
-                }
-
-                if((this.targetLevel >= this.selectedLevel && this.selectedLevel == i) ||
-                    (this.targetLevel < this.selectedLevel && this.targetLevel == i)){
-                    ctx.fillStyle = "rgba(0,0,0,0.3)";
-                    ctx.beginPath();
-                    ctx.ellipse(this.player.x, this.player.y + HALF_TILE, HALF_TILE, HALF_TILE / 3, 0, 0, Math.PI * 2);            
-                    ctx.fill();
-        
-                    this.player.draw(ctx, TILE);  
-                }
-            }
-          
-        }
-        
-        this.displayText(ctx, "SELECT A LEVEL", REAL_WIDTH / 2, TILE, TILE*2);        
-
-        this.displayText(ctx, "Use arrows to navigate. Push space to select...", REAL_WIDTH / 2, REAL_HEIGHT - TILE*2, TILE * 0.75);        
+        this.drawLevelsMap(ctx);
 
     }else if(this.currentScene == Scenes.PRE_LEVEL){        
 
@@ -546,6 +459,110 @@ Game.draw = function(){
     }    
 
     this.drawOverlayAfter(ctx);
+}
+
+Game.drawLevelsMap = function(ctx){
+    
+    ctx.fillStyle = "rgb(51, 102, 0)";
+    ctx.fillRect(0,0,REAL_WIDTH,REAL_HEIGHT);
+
+    if(this.player.y > REAL_HEIGHT * 0.5 ){        
+        if(!this.lastTranslateY){
+            this.lastTranslateY = 0;                        
+        }
+       
+        this.lastTranslateY = REAL_HEIGHT * 0.5 - this.player.y;        
+        ctx.translate(0, this.lastTranslateY);                                                      
+    }else{
+        this.lastTranslateY = 0;
+    }
+    
+    if(this.levelsMap){            
+        for(var i=0; i<this.levelsMap.length; i++){                                
+
+            var level = this.levelsMap[i]; 
+
+            if(this.selectedLevel == this.targetLevel 
+                && this.selectedLevel == i){                    
+                var grd=ctx.createRadialGradient(level.x,level.y,0,level.x,level.y,TILE*1.5);
+                grd.addColorStop(0,"white");
+                grd.addColorStop(1,"rgb(51, 102, 0)");
+                                    
+                ctx.fillStyle=grd;
+                ctx.beginPath();                    
+                ctx.ellipse(level.x, level.y, TILE*2, TILE*2, 0, 0, Math.PI * 2);            
+                ctx.fill();                    
+            }
+
+            ctx.fillStyle = "rgb(204, 153, 0)";
+                            
+            if(i > 0){
+                ctx.strokeStyle = "rgb(204, 153, 0)";
+                ctx.lineWidth = TILE;
+                ctx.beginPath();
+                ctx.moveTo(this.levelsMap[i-1].x, this.levelsMap[i-1].y);
+                ctx.lineTo(level.x, level.y);                
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = "rgb(204, 153, 0)";
+            ctx.beginPath();
+            ctx.ellipse(level.x, level.y, TILE, TILE, 0, 0, Math.PI * 2);            
+            ctx.fill();
+        }                
+                
+        for(var i=0; i<this.levelsMap.length; i++){                                
+            var level = this.levelsMap[i];                                 
+
+            if(!LEVELS[i].completed){
+                var dx = Math.sin((Loop.lastTime + i*Loop.fps*i*Loop.fps) / 1000 * Math.PI) * HALF_TILE;
+                
+                ctx.fillStyle = "rgba(0,0,0,0.3)";
+                ctx.beginPath();
+                ctx.ellipse(level.x + dx, level.y - HALF_TILE, HALF_TILE, HALF_TILE / 3, 0, 0, Math.PI * 2);            
+                ctx.fill();
+            
+                this.displayText(ctx, i+1, level.x, level.y, TILE, "rgba(255,255,255,0.5)");                                                                        
+            }else{
+                this.displayText(ctx, i+1, level.x, level.y, TILE, "rgba(0,0,0,0.2)");                                                                        
+            }
+            
+        }
+
+        for(var i=0; i<this.levelsMap.length; i++){                                
+            var level = this.levelsMap[i];                                 
+
+            if(!LEVELS[i].completed){
+                var dx = Math.sin((Loop.lastTime + i*Loop.fps*i*Loop.fps) / 1000 * Math.PI) * HALF_TILE;
+
+                var levelGhost = LEVELS[i].enemies[LEVELS[i].enemies.length - 1];
+                var ghost = new Ghost(0, 1, 1);
+                ghost.state = levelGhost.state;
+                ghost.color = levelGhost.color;
+                ghost.x = level.x + dx;
+                ghost.y = level.y - TILE - HALF_TILE;
+                ghost.draw(ctx, TILE);
+            }
+
+            if((this.targetLevel >= this.selectedLevel && this.selectedLevel == i) ||
+                (this.targetLevel < this.selectedLevel && this.targetLevel == i)){
+                ctx.fillStyle = "rgba(0,0,0,0.3)";
+                ctx.beginPath();
+                ctx.ellipse(this.player.x, this.player.y + HALF_TILE, HALF_TILE, HALF_TILE / 3, 0, 0, Math.PI * 2);            
+                ctx.fill();
+    
+                this.player.draw(ctx, TILE);  
+            }
+        }
+        
+    }        
+
+    if(this.lastTranslateY){        
+        ctx.translate(0, -this.lastTranslateY);        
+    }
+    
+    this.displayTextWidthShadow(ctx, "SELECT A LEVEL", REAL_WIDTH / 2, TILE, TILE*2);            
+    this.displayTextWidthShadow(ctx, "Use arrows to navigate. Push space to select...", REAL_WIDTH / 2, REAL_HEIGHT - TILE*2, TILE * 0.75);        
 }
 
 Game.drawOverlayBefore = function(ctx){
@@ -871,6 +888,11 @@ Game.displayText = function(ctx, text, x, y, size, color){
     
     ctx.fillStyle = color ?  color : "#FFF";
     ctx.fillText(text,realX,realY);
+}
+
+Game.displayTextWidthShadow = function(ctx, text, x, y, size, color){
+    this.displayText(ctx, text, x - size/16, y + size/16, size, "rgba(0,0,0,0.5)");
+    this.displayText(ctx, text, x, y, size, color);    
 }
 
 Game.blinkText = function(ctx, text, x, y, size, color){
