@@ -51,6 +51,9 @@ function keyDown(e) {
     } else if (e.keyCode == '32') { //space
         e.preventDefault();
         Game.select();
+    } else if (e.keyCode == '27') { //esc
+        e.preventDefault();
+        Game.escape();
     }
 }
 

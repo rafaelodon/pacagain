@@ -40,7 +40,7 @@ var Scenes = {
     GAME : 3,
     GAME_OVER : 4,
     LEVEL_COMPLETED : 5,
-    WIN : 6    
+    WIN : 6
 }
 
 var OverlayType = {

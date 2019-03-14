@@ -12,7 +12,8 @@ var Game = {
     currentLevel : LEVELS[0],    
     overlay : {},
     player : new Player(12, 13),
-    playing : true,    
+    playing : true,   
+    escaping: false, 
     objects : new Grid(GRID_WIDTH, GRID_HEIGHT),
     pillsCollected : 0,
     lastKeyDirection : undefined,    
@@ -410,6 +411,12 @@ Game.draw = function(){
         this.player.draw(ctx, TILE);
         this.drawHeader(ctx);
 
+        if(this.escaping){
+            this.displayDarkOverlay(ctx);                       
+            this.blinkText(ctx, "Push ESC to return to the map.", REAL_WIDTH / 2, (REAL_HEIGHT / 4)*2, TILE, Colors.RED);
+            this.blinkText(ctx, "Push SPACE to continue playing.", REAL_WIDTH / 2, (REAL_HEIGHT / 4)*2 + TILE*2, TILE, Colors.GREEN);
+        }
+
     }else if(this.currentScene == Scenes.GAME_OVER){        
         Soundtrack.pause();        
         this.clearCanvas(ctx);   
@@ -610,6 +617,11 @@ Game.select = function(){
                 that.prepareLevel();
             });
         }        
+    }else if(this.currentScene == Scenes.GAME){
+        if(this.escaping){
+            this.escaping = false;     
+            this.playing = true;
+        }
     }
 }
 
@@ -639,9 +651,7 @@ Game.continueOnKeyOrTouch = function(){
         return true;
 
     }else if(this.currentScene == Scenes.LEVEL_COMPLETED){                
-        this.levelsMap = undefined;
-        this.currentScene = Scenes.SELECT_LEVEL;        
-        this.displayFadeOutOverlay();
+        this.goToLevelsMap();
         return true;
 
     }else if(this.currentScene == Scenes.INTRO){        
@@ -1037,4 +1047,25 @@ Game.drawEnemies = function(ctx){
         var ghost = this.currentLevel.enemies[i];
         ghost.draw(ctx, TILE);
     };
+}
+
+Game.escape = function(){
+    if(this.currentScene == Scenes.GAME){
+        if(!this.escaping){
+            this.playing = false;
+            this.escaping = true;            
+        }else{                 
+            this.escaping = false;                        
+            this.goToLevelsMap();
+        }
+    }    
+}
+
+Game.goToLevelsMap = function(){
+    this.playing = false    
+    this.levelsMap = undefined;
+    this.player.state == PlayerState.STOPPED;
+    this.lastKeyDirection = undefined;
+    this.currentScene = Scenes.SELECT_LEVEL;
+    this.displayFadeOutOverlay();                                  
 }
