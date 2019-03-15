@@ -2,7 +2,7 @@
 
 A Pacman variation written in pure HTML5 Canvas/Javascript (ES5) for learning purposes.
 
-Be careful, may contain bad quality code. :'(
+Be careful, may contain not-so-good under-construction code. :'(
 
 Adittional credits:
 * Soundtrack: CH Loops by Clinthammer (https://freesound.org/people/Clinthammer/packs/11343/)
