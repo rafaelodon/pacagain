@@ -250,3 +250,4 @@ Ghost.prototype.draw = function(ctx, scale){
     //ctx.fillRect(this.x, this.y, TILE/8, TILE/8);            
 }
     
+//TODO: check ghost out of bounds (block or teletransport?)

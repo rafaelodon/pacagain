@@ -25,7 +25,8 @@ var Objects = {
     PILL : 0,
     DOOR : 1,    
     KEY : 2,
-    LIFE : 3    
+    LIFE : 3,   
+    GHOST : 4
 }
 
 var Orientations = {
