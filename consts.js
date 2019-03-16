@@ -18,6 +18,8 @@ var Colors = {
     PINK : "#F0F",
     YELLOW: "#FF0",
     CIANO : "#0FF",
+    ORANGE : "#FFA500",
+    INDIGO : "#4B0082",
     GREY : "#888"
 }
 

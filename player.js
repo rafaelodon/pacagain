@@ -52,8 +52,9 @@ Player.prototype.update = function () {
         if (this.state == PlayerState.MOVING) {
 
             //Only changes the direction when the player is centered on the next tile
-            if (typeof this.game.lastKeyDirection != "undefined") {
-                if ((this.x + HALF_TILE) % TILE == 0 && (this.y + HALF_TILE) % TILE == 0) {
+
+            if (typeof this.game.lastKeyDirection != "undefined") {                
+                if ((this.x + HALF_TILE) % TILE == 0 && (this.y + HALF_TILE) % TILE == 0) {                    
                     gridX = this.gx + Directions.DELTA[this.game.lastKeyDirection].dx;
                     gridY = this.gy + Directions.DELTA[this.game.lastKeyDirection].dy;
                     if (!this.game.checkObstacle(gridX, gridY)) {

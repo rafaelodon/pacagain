@@ -10,7 +10,7 @@ var Game = {
     auxCanvas: undefined,
     currentLevelNumber: 1,
     currentLevel: LEVELS[0],
-    nextAvaiableLevel: LEVELS.length - 1,
+    nextAvaiableLevel: 1,
     overlay: {},
     player: new Player(12, 13),
     playing: true,
@@ -263,8 +263,8 @@ Game.updateLevelsMap = function () {
                     this.targetLevel = this.selectedLevel + 1;
                     this.player.state = PlayerState.MOVING;
                 }
-            } else if (this.lastKeyDirection == Directions.UP) {
-                if (prevY && prevY < currentY) {
+            } else if (this.lastKeyDirection == Directions.UP) {                
+                if (prevY && prevY < currentY) {                    
                     this.targetLevel = this.selectedLevel - 1;
                     this.player.state = PlayerState.MOVING;
                 }
@@ -638,7 +638,7 @@ Game.select = function () {
 }
 
 Game.moveUp = function () {
-    this.lastKeyDirection = Directions.UP;
+    this.lastKeyDirection = Directions.UP;    
 }
 
 Game.moveDown = function () {
@@ -688,6 +688,11 @@ Game.resetPlayer = function () {
     this.player.game = Game;
     this.player.x = this.player.ix * TILE + HALF_TILE;
     this.player.y = this.player.iy * TILE + HALF_TILE;
+    if(this.currentLevel.initialDirection){
+        this.player.direction = this.currentLevel.initialDirection;
+    }else{
+        this.player.direction = Directions.LEFT;
+    }
 }
 
 Game.nextLevel = function () {
