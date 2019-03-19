@@ -20,7 +20,10 @@ var Colors = {
     CIANO : "#0FF",
     ORANGE : "#FFA500",
     INDIGO : "#4B0082",
-    GREY : "#888"
+    GREY : "#888",
+    //levels map colors
+    PATH : "#D09A37",
+    BLOCKED_PATH : "#467821",
 }
 
 var Objects = {

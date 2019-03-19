@@ -251,3 +251,4 @@ Ghost.prototype.draw = function(ctx, scale){
 }
     
 //TODO: check ghost out of bounds (block or teletransport?)
+//TODO: check if theres no in the target tile (they are overlapping each othe during the chase)

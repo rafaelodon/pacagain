@@ -238,7 +238,7 @@ Game.updateLevelsMap = function () {
                 var prevX = this.levelsMap[this.selectedLevel - 1].x;
                 var prevY = this.levelsMap[this.selectedLevel - 1].y;
 
-            }            
+            }
 
             if (this.lastKeyDirection == Directions.RIGHT) {
                 if (nextX && nextX > currentX) {
@@ -263,14 +263,14 @@ Game.updateLevelsMap = function () {
                     this.targetLevel = this.selectedLevel + 1;
                     this.player.state = PlayerState.MOVING;
                 }
-            } else if (this.lastKeyDirection == Directions.UP) {                
-                if (prevY && prevY < currentY) {                    
+            } else if (this.lastKeyDirection == Directions.UP) {
+                if (prevY && prevY < currentY) {
                     this.targetLevel = this.selectedLevel - 1;
                     this.player.state = PlayerState.MOVING;
                 }
             }
 
-            if(this.targetLevel > this.nextAvaiableLevel){
+            if (this.targetLevel > this.nextAvaiableLevel) {
                 this.player.state = PlayerState.STOPPED;
                 this.targetLevel = this.selectedLevel;
             }
@@ -280,7 +280,7 @@ Game.updateLevelsMap = function () {
             }
 
             this.player.direction = this.lastKeyDirection;
-            this.lastKeyDirection = undefined;            
+            this.lastKeyDirection = undefined;
         }
     }
 
@@ -490,12 +490,14 @@ Game.drawLevelsMap = function (ctx) {
         this.lastTranslateY = 0;
     }
 
-    if (this.levelsMap) {        
-        
+    if (this.levelsMap) {
+
+        //first layer: paths and shinings
         for (var i = 0; i < this.levelsMap.length; i++) {
 
-            var level = this.levelsMap[i];                        
+            var level = this.levelsMap[i];
 
+            //draw current level background shine
             if (this.selectedLevel == this.targetLevel
                 && this.selectedLevel == i) {
                 var grd = ctx.createRadialGradient(level.x, level.y, 0, level.x, level.y, TILE * 1.5);
@@ -508,23 +510,32 @@ Game.drawLevelsMap = function (ctx) {
                 ctx.fill();
             }
 
-            ctx.fillStyle = "rgb(204, 153, 0)";
-
-            // draw the levels map "vertex"
-            if (i > 0){
-                if(i <= this.nextAvaiableLevel){
-                    ctx.strokeStyle = "rgb(204, 153, 0)";                
-                }else{
-                    ctx.strokeStyle = "rgba(204, 153, 0, 0.2)";                
-                }
+            color = Colors.PATH;
+            if (i > this.nextAvaiableLevel) {
+                color =  Colors.BLOCKED_PATH;
+            }
+            
+            ctx.strokeStyle = color;
+            if (i > 0) {                
                 ctx.lineWidth = TILE;
                 ctx.beginPath();
                 ctx.moveTo(this.levelsMap[i - 1].x, this.levelsMap[i - 1].y);
                 ctx.lineTo(level.x, level.y);
                 ctx.stroke();
             }
+        }
 
-            ctx.fillStyle = "rgb(204, 153, 0)";
+        //second layer: levels nodes
+        for (var i = 0; i < this.levelsMap.length; i++) {
+
+            var level = this.levelsMap[i];
+
+            color = Colors.PATH;
+            if (i > this.nextAvaiableLevel) {
+                color =  Colors.BLOCKED_PATH;
+            }
+                                                
+            ctx.fillStyle = color;
             ctx.beginPath();
             ctx.ellipse(level.x, level.y, TILE, TILE, 0, 0, Math.PI * 2);
             ctx.fill();
@@ -541,11 +552,22 @@ Game.drawLevelsMap = function (ctx) {
                 ctx.ellipse(level.x + dx, level.y - HALF_TILE, HALF_TILE, HALF_TILE / 3, 0, 0, Math.PI * 2);
                 ctx.fill();
 
-                this.displayText(ctx, i + 1, level.x, level.y, TILE, "rgba(255,255,255,0.5)");
+                if (i > 0) {
+                    this.displayText(ctx, i + 1, level.x, level.y, TILE, "rgba(255,255,255,0.5)");
+                }
             } else {
-                this.displayText(ctx, i + 1, level.x, level.y, TILE, "rgba(0,0,0,0.2)");
+                if (i > 0) {
+                    this.displayText(ctx, i + 1, level.x, level.y, TILE, "rgba(0,0,0,0.2)");
+                }
             }
 
+            if (i == 0) {
+                //pac house
+                ctx.fillStyle = "rgb(200,200,0)";
+                ctx.beginPath();
+                ctx.ellipse(level.x, level.y - TILE, HALF_TILE, HALF_TILE, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
 
         for (var i = 0; i < this.levelsMap.length; i++) {
@@ -638,7 +660,7 @@ Game.select = function () {
 }
 
 Game.moveUp = function () {
-    this.lastKeyDirection = Directions.UP;    
+    this.lastKeyDirection = Directions.UP;
 }
 
 Game.moveDown = function () {
@@ -663,10 +685,10 @@ Game.continueOnKeyOrTouch = function () {
         return true;
 
     } else if (this.currentScene == Scenes.LEVEL_COMPLETED) {
-        if(this.currentLevelNumber >= LEVELS.length){
+        if (this.currentLevelNumber >= LEVELS.length) {
             this.currentScene = Scenes.WIN;
-        }else{
-            this.goToLevelsMap();        
+        } else {
+            this.goToLevelsMap();
         }
         return true;
 
@@ -688,17 +710,17 @@ Game.resetPlayer = function () {
     this.player.game = Game;
     this.player.x = this.player.ix * TILE + HALF_TILE;
     this.player.y = this.player.iy * TILE + HALF_TILE;
-    if(this.currentLevel.initialDirection){
+    if (this.currentLevel.initialDirection) {
         this.player.direction = this.currentLevel.initialDirection;
-    }else{
+    } else {
         this.player.direction = Directions.LEFT;
     }
 }
 
 Game.nextLevel = function () {
     if (this.currentLevelNumber < LEVELS.length) {
-        this.currentLevelNumber++;        
-        this.prepareLevel();    
+        this.currentLevelNumber++;
+        this.prepareLevel();
     } else {
         this.currentScene = Scenes.WIN;
     }
@@ -960,12 +982,12 @@ Game.completeLevel = function () {
     if (this.playing) {
         this.playing = false;
         this.currentLevel.completed = true;
-        if(this.currentLevelNumber - 1 == this.nextAvaiableLevel){
-            this.nextAvaiableLevel++;                        
+        if (this.currentLevelNumber - 1 == this.nextAvaiableLevel) {
+            this.nextAvaiableLevel++;
         }
         var that = this;
-        this.displayCircleOverlay(this.player.x, this.player.y, function (that) {            
-            that.currentScene = Scenes.LEVEL_COMPLETED;            
+        this.displayCircleOverlay(this.player.x, this.player.y, function (that) {
+            that.currentScene = Scenes.LEVEL_COMPLETED;
         });
     }
 }
