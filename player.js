@@ -53,8 +53,8 @@ Player.prototype.update = function () {
 
             //Only changes the direction when the player is centered on the next tile
 
-            if (typeof this.game.lastKeyDirection != "undefined") {                
-                if ((this.x + HALF_TILE) % TILE == 0 && (this.y + HALF_TILE) % TILE == 0) {                    
+            if (typeof this.game.lastKeyDirection != "undefined") {
+                if ((this.x + HALF_TILE) % TILE == 0 && (this.y + HALF_TILE) % TILE == 0) {
                     gridX = this.gx + Directions.DELTA[this.game.lastKeyDirection].dx;
                     gridY = this.gy + Directions.DELTA[this.game.lastKeyDirection].dy;
                     if (!this.game.checkObstacle(gridX, gridY)) {
@@ -161,24 +161,24 @@ Player.prototype.draw = function (ctx, scale) {
     //ctx.fillRect(this.x, this.y, TILE/8, TILE/8);            
 }
 
-Player.prototype.detectOutOfBounds = function(){
-    if(this.gx < 0){        
-        this.moveTo(GRID_WIDTH,this.gy);        
+Player.prototype.detectOutOfBounds = function () {
+    if (this.gx < 0) {
+        this.moveTo(GRID_WIDTH, this.gy);
         return;
     }
 
-    if(this.gx > GRID_WIDTH){        
-        this.moveTo(-1,this.gy);
+    if (this.gx > GRID_WIDTH) {
+        this.moveTo(-1, this.gy);
         return;
     }
-    
-    if(this.gy < 1){ // a primeira linha é a barra de status
-        this.moveTo(this.gx, GRID_HEIGHT);        
+
+    if (this.gy < 1) { // a primeira linha é a barra de status
+        this.moveTo(this.gx, GRID_HEIGHT);
         return;
     }
-    
-    if(this.gy > GRID_HEIGHT){        
-        this.moveTo(this.gx, 0);        
+
+    if (this.gy > GRID_HEIGHT) {
+        this.moveTo(this.gx, 0);
         return;
     }
 }

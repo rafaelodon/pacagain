@@ -4,40 +4,40 @@
  * @param {*} file A string indicating the path of the audio file
  * @param {*} background A boolean indicating wheter is this a background track
  */
-function GameSound(file, isSoundtrack){
-    this.audio = new Audio(file);    
+function GameSound(file, isSoundtrack) {
+    this.audio = new Audio(file);
     this.isSoundtrack = isSoundtrack;
     this.hasPlayed = false;
-    
-    if(this.isSoundtrack){            
-        this.audio.addEventListener('ended', function() {
-            this.currentTime = 0.09;        
+
+    if (this.isSoundtrack) {
+        this.audio.addEventListener('ended', function () {
+            this.currentTime = 0.09;
             this.play();
         }, false);
-    }    
+    }
 }
 
-GameSound.prototype.play = function(volume){
-    if(volume){
+GameSound.prototype.play = function (volume) {
+    if (volume) {
         this.audio.volume = volume;
     }
-    if(this.isSoundtrack){
-        if(Soundtrack.audio != this.audio){
+    if (this.isSoundtrack) {
+        if (Soundtrack.audio != this.audio) {
             Soundtrack.pause();
-            Soundtrack.audio = this.audio; 
+            Soundtrack.audio = this.audio;
             this.audio.play();
         }
-    }else{
+    } else {
         this.audio.currentTime = 0;
         this.audio.play();
     }
 }
 
-GameSound.prototype.playOnce = function(volume){
-    if(!this.hasPlayed){
+GameSound.prototype.playOnce = function (volume) {
+    if (!this.hasPlayed) {
         this.play(volume);
         this.hasPlayed = true;
-    }    
+    }
 }
 
 /**
@@ -45,11 +45,11 @@ GameSound.prototype.playOnce = function(volume){
  *
  */
 var Soundtrack = {
-    audio : undefined
+    audio: undefined
 }
 
-Soundtrack.pause = function(){
-    if(this.audio){
+Soundtrack.pause = function () {
+    if (this.audio) {
         this.audio.pause();
         this.audio = undefined;
     }
@@ -59,13 +59,13 @@ Soundtrack.pause = function(){
 /**
  * Constants representing the avaiable sounds
  */
-var SOUNDS = {    
-    beep : new GameSound("sound/beep.wav"),
-    hit : new GameSound("sound/hit.wav"),    
-    jump : new GameSound("sound/jump.wav"),
+var SOUNDS = {
+    beep: new GameSound("sound/beep.wav"),
+    hit: new GameSound("sound/hit.wav"),
+    jump: new GameSound("sound/jump.wav"),
     collect: new GameSound("sound/collect.wav"),
     die: new GameSound("sound/die.wav"),
-    over: new GameSound("sound/over.wav"),    
+    over: new GameSound("sound/over.wav"),
     win: new GameSound("sound/win.wav"),
     door: new GameSound("sound/door.wav"),
     bg1: new GameSound("sound/bg1.wav", true),

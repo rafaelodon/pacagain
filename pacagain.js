@@ -512,11 +512,11 @@ Game.drawLevelsMap = function (ctx) {
 
             color = Colors.PATH;
             if (i > this.nextAvaiableLevel) {
-                color =  Colors.BLOCKED_PATH;
+                color = Colors.BLOCKED_PATH;
             }
-            
+
             ctx.strokeStyle = color;
-            if (i > 0) {                
+            if (i > 0) {
                 ctx.lineWidth = TILE;
                 ctx.beginPath();
                 ctx.moveTo(this.levelsMap[i - 1].x, this.levelsMap[i - 1].y);
@@ -532,9 +532,9 @@ Game.drawLevelsMap = function (ctx) {
 
             color = Colors.PATH;
             if (i > this.nextAvaiableLevel) {
-                color =  Colors.BLOCKED_PATH;
+                color = Colors.BLOCKED_PATH;
             }
-                                                
+
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.ellipse(level.x, level.y, TILE, TILE, 0, 0, Math.PI * 2);
