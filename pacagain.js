@@ -535,15 +535,13 @@ Game.drawLevelsMap = function (ctx) {
                 color = Colors.BLOCKED_PATH;
             }
 
+            // Level circle
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.ellipse(level.x, level.y, TILE, TILE, 0, 0, Math.PI * 2);
             ctx.fill();
-        }
 
-        for (var i = 0; i < this.levelsMap.length; i++) {
-            var level = this.levelsMap[i];
-
+            // Level number
             if (!LEVELS[i].completed) {
                 var dx = Math.sin((Loop.lastTime + i * Loop.fps * i * Loop.fps) / 1000 * Math.PI) * HALF_TILE;
 
@@ -561,15 +559,26 @@ Game.drawLevelsMap = function (ctx) {
                 }
             }
 
-            if (i == 0) {
-                //pac house
-                ctx.fillStyle = "rgb(200,200,0)";
+            // Pac house on first level
+            if (i == 0) {                                
+                
+                var dx1 = Math.sin((Loop.lastTime + i * Loop.fps * i * Loop.fps) / 1000 * Math.PI) * HALF_TILE / 4;
+                Game.drawCloud(ctx, level.x + TILE + dx1, level.y - TILE * 1.25, TILE * 0.8);
+
+                Game.drawTube(ctx, level.x, level.y - TILE, TILE, TILE / 2, "rgb(200,200,0)");
+                Game.drawTube(ctx, level.x - TILE / 8, level.y - TILE + TILE / 8, TILE / 4, TILE / 3, "#000");
+                
+                ctx.fillStyle = "#000";
                 ctx.beginPath();
-                ctx.ellipse(level.x, level.y - TILE, HALF_TILE, HALF_TILE, 0, 0, Math.PI * 2);
+                ctx.arc(level.x + TILE / 4, level.y - TILE * 1.2, TILE / 8, 0, 2 * Math.PI);
                 ctx.fill();
+
+                var dx2 = Math.sin((Loop.lastTime + i * Loop.fps * i * Loop.fps) / 1000 * Math.PI) * HALF_TILE / 2;
+                Game.drawCloud(ctx, level.x - TILE + dx2, level.y - TILE, TILE);
             }
         }
 
+        // Third layer: ghosts, pac and their shadows
         for (var i = 0; i < this.levelsMap.length; i++) {
             var level = this.levelsMap[i];
 
@@ -604,6 +613,29 @@ Game.drawLevelsMap = function (ctx) {
 
     this.displayTextWidthShadow(ctx, "SELECT A LEVEL", REAL_WIDTH / 2, TILE, TILE * 2);
     this.displayTextWidthShadow(ctx, "Use arrows to navigate. Push space to select...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 2, TILE * 0.75);
+}
+
+Game.drawTube = function (ctx, x, y, width, height, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y - height / 2, width / 2, Math.PI, 0);
+    ctx.fill();
+    ctx.fillRect(x - width / 2, y - height / 2, width, height);
+    ctx.fill();
+}
+
+Game.drawCloud = function (ctx, x, y, width) {
+    ctx.fillStyle = "#FFF";
+    ctx.beginPath();
+    ctx.arc(x - width / 2, y - width / 2, width / 3, Math.PI, 0);
+    ctx.arc(x, y - width / 2, width / 2, Math.PI, 0);
+    ctx.arc(x + width / 3, y - width / 2, width / 3, Math.PI, 0);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    ctx.beginPath();
+    ctx.ellipse(x, y + width / 2, width * 0.8, width / 8, 0, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 Game.drawOverlayBefore = function (ctx) {
