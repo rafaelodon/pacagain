@@ -186,7 +186,7 @@ Game.update = function () {
     this.updateOverlay();
 
     if (this.currentScene == undefined) {
-        this.currentScene = Scenes.INTRO;
+        this.currentScene = Scenes.INTRO;        
         this.displayFadeOutOverlay();
     }
 
@@ -460,14 +460,17 @@ Game.draw = function () {
         this.player.direction = Directions.LEFT;
         this.player.draw(ctx, TILE * 2);
 
-        for (var i = 0; i < LEVELS[LEVELS.length - 1].enemies.length; i++) {
-            var dx = Math.sin((Loop.lastTime + i * Loop.fps) / 500 * Math.PI) * TILE / 2
-            var enemy = LEVELS[LEVELS.length - 1].enemies[i];
-            enemy.state = GhostState.CHASING;
-            enemy.direction = Directions.LEFT;
-            enemy.x = REAL_WIDTH / 9 * (i + 3) + dx;
-            enemy.y = REAL_HEIGHT / 3 * 2;
-            enemy.draw(ctx, TILE * 2);
+        colors = [Colors.RED, Colors.GREEN, Colors.BLUE, Colors.PINK, Colors.YELLOW, Colors.CIANO, Colors.ORANGE, Colors.INDIGO];
+        ghost = new Ghost(0, 0, 0, {
+            state: GhostState.CHASING,
+            direction: Directions.LEFT,            
+        });
+        for (var i = 0; i < colors.length; i++) {            
+            var dx = Math.sin((Loop.lastTime + i * Loop.fps) / 500 * Math.PI) * TILE / 2;
+            ghost.x = REAL_WIDTH / 10 * (i + 2.2) + dx;
+            ghost.y = REAL_HEIGHT / 3 * 2;            
+            ghost.color = colors[i]
+            ghost.draw(ctx, TILE * 2);
         }
     }
 
@@ -560,14 +563,14 @@ Game.drawLevelsMap = function (ctx) {
             }
 
             // Pac house on first level
-            if (i == 0) {                                
-                
+            if (i == 0) {
+
                 var dx1 = Math.sin((Loop.lastTime + i * Loop.fps * i * Loop.fps) / 1000 * Math.PI) * HALF_TILE / 4;
                 Game.drawCloud(ctx, level.x + TILE + dx1, level.y - TILE * 1.25, TILE * 0.8);
 
                 Game.drawTube(ctx, level.x, level.y - TILE, TILE, TILE / 2, "rgb(200,200,0)");
                 Game.drawTube(ctx, level.x - TILE / 8, level.y - TILE + TILE / 8, TILE / 4, TILE / 3, "#000");
-                
+
                 ctx.fillStyle = "#000";
                 ctx.beginPath();
                 ctx.arc(level.x + TILE / 4, level.y - TILE * 1.2, TILE / 8, 0, 2 * Math.PI);
