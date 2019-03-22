@@ -2,7 +2,11 @@
 
 A Pacman variation written in pure HTML5 Canvas/Javascript (ES5) for learning purposes.
 
-Be careful, may contain not-so-good under-construction code. :'(
+No sprite images are loaded, all the visual elements are drawn using the JavaScript graphic API.
+
+No external lib is included. All the motion tween and animations were calculated and programmed from scratch.
+
+Be careful, may contain non-optimized and under-construction code. :'(
 
 Adittional credits:
 * Soundtrack: CH Loops by Clinthammer (https://freesound.org/people/Clinthammer/packs/11343/)
