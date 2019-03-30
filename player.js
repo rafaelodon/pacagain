@@ -16,7 +16,8 @@ var Player = function (gx, gy, options) {
         body: [],
         bodyDirections: [],
         bodySize: 0,
-        firstTile: true
+        firstTile: true,
+        recovering: 0
     }
 
     options = (typeof options == "undefined") ? {} : options
@@ -39,6 +40,9 @@ Player.prototype.reset = function () {
     for (var i in this.initialState) {
         this[i] = this.initialState[i]
     }
+    this.bodySize = 0
+    this.body = []
+    this.bodyDirections = []
 }
 
 Player.prototype.moveTo = function (gx, gy) {
@@ -53,6 +57,12 @@ Player.prototype.update = function () {
     var destX, destY, gridX, gridY
 
     if (this.game.playing) {
+
+        if (this.recovering > 0) {
+            this.recovering -= 0.01
+        } else {
+            this.recovering = 0
+        }
 
         if (this.state === PlayerState.MOVING) {
 
@@ -84,8 +94,10 @@ Player.prototype.update = function () {
                         this.bodyDirections.unshift(this.lastDirection)
                         if (this.bodyDirections.length > this.bodySize) {
                             this.bodyDirections.pop()
-                            //the last body element only starts moving when the body has shifted                            
-                            this.body[this.body.length - 1].moving = true
+                            //the last body element only starts moving when the body has shifted
+                            if (this.body.length > 0) {
+                                this.body[this.body.length - 1].moving = true
+                            }
                         }
                     }
 
@@ -114,14 +126,14 @@ Player.prototype.update = function () {
                                 moving: false
                             })
                         }
-                    }else{
+                    } else {
                         //if the body is fully assembled, register the elements grid position every tile change
-                        for(i=0; i<this.body.length; i++){
+                        for (i = 0; i < this.body.length; i++) {
                             this.body[i].gx += Directions.DELTA[this.bodyDirections[i]].dx
                             this.body[i].gy += Directions.DELTA[this.bodyDirections[i]].dy
                         }
-                    }                    
-                                        
+                    }
+
                     if (this.body.length > this.bodySize) {
                         this.body.pop()
                     }
@@ -153,11 +165,23 @@ Player.prototype.update = function () {
             this.detectOutOfBounds()
 
             if (this.game.detectPlayerGhostCollision()) {
-                this.game.hitPlayerAndGhost()
+                if (this.recovering == 0) {
+                    if (this.bodySize > 0) {
+                        this.bodySize -= 1
+                        this.recovering = 1
+                    } else {
+                        this.game.hitPlayerAndGhost()
+                    }
+                }
             }
 
             if (this.game.checkPill(this.gx, this.gy)) {
                 this.game.collectPill(this.gx, this.gy)
+            }
+
+            if (this.game.checkNibble(this.gx, this.gy)) {
+                this.bodySize += 1
+                this.game.collectNibble(this.gx, this.gy)
             }
 
             if (this.game.checkExtraLife(this.gx, this.gy)) {
@@ -188,7 +212,11 @@ Player.prototype.draw = function (ctx, scale) {
         scale = TILE
     }
 
-    ctx.fillStyle = this.color
+    if (this.recovering > 0) {
+        ctx.fillStyle = "rgba(255,255,0,0.5)"
+    } else {
+        ctx.fillStyle = this.color
+    }
 
     var archStart = 0
     var archEnd = 0
@@ -219,15 +247,11 @@ Player.prototype.draw = function (ctx, scale) {
 
     //draw the pac-nibble body
     this.body.forEach(b => {
-        if (!b.moving) {
-            ctx.fillStyle = Colors.RED
-        }
         ctx.beginPath()
         ctx.arc(b.x, b.y, scale / 2, 0, Math.PI * 2)
         ctx.fill()
     })
-
-    ctx.fillStyle = this.color
+    
     ctx.beginPath()
     ctx.arc(this.x, this.y, scale / 2, Math.PI * archStart, -this.mouthOpening + Math.PI * archEnd)
     ctx.arc(this.x, this.y, scale / 2, Math.PI * archStart, +this.mouthOpening + Math.PI * archEnd, true)

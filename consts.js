@@ -31,7 +31,8 @@ var Objects = {
     DOOR: 1,
     KEY: 2,
     LIFE: 3,
-    GHOST: 4
+    GHOST: 4,
+    NIBBLE: 5,
 }
 
 var Orientations = {
