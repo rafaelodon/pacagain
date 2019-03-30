@@ -212,7 +212,7 @@ Player.prototype.draw = function (ctx, scale) {
         scale = TILE
     }
 
-    if (this.recovering > 0) {
+    if (this.game.playing && this.recovering > 0) {
         ctx.fillStyle = "rgba(255,255,0,0.5)"
     } else {
         ctx.fillStyle = this.color
@@ -245,12 +245,14 @@ Player.prototype.draw = function (ctx, scale) {
         this.mouthOpening = (Math.sin(Loop.lastTime / 333 * Math.PI) / 2 + 0.5)
     }
 
-    //draw the pac-nibble body
-    this.body.forEach(b => {
-        ctx.beginPath()
-        ctx.arc(b.x, b.y, scale / 2, 0, Math.PI * 2)
-        ctx.fill()
-    })
+    if(this.game.playing){
+        //draw the pac-nibble body
+        this.body.forEach(b => {
+            ctx.beginPath()
+            ctx.arc(b.x, b.y, scale / 2, 0, Math.PI * 2)
+            ctx.fill()
+        })
+    }
     
     ctx.beginPath()
     ctx.arc(this.x, this.y, scale / 2, Math.PI * archStart, -this.mouthOpening + Math.PI * archEnd)
