@@ -4,8 +4,13 @@ var touch = {};
 window.onload = function () {
 
     document.onkeydown = keyDown;
-    document.body.addEventListener('touchstart', onTouchStart, false)
-    document.body.addEventListener('touchend', onTouchEnd, false);
+    document.body.addEventListener('touchstart', onTouchStart, { passive: false });
+    document.body.addEventListener('touchend', onTouchEnd, { passive: false });    
+
+    document.getElementById("canvas").addEventListener('click', function (e){
+        e.preventDefault();
+        Game.select();
+    });
 
     Game.setCanvas(document.getElementById("canvas"));
     Game.resetAll();
@@ -68,16 +73,18 @@ function onTouchEnd(e) {
     var dy = e.changedTouches[0].pageY - touch.y;
     if (dx * dx > dy * dy) {
         if (dx > 0) {
-            Game.moveRight();
+            Game.moveRight();        
         } else {
             Game.moveLeft();
         }
+        e.preventDefault();
     } else {
         if (dy > 0) {
             Game.moveDown();
         } else {
             Game.moveUp();
         }
+        e.preventDefault();
     }
 }
 

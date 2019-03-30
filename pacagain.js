@@ -18,7 +18,7 @@ var Game = {
     objects: new Grid(GRID_WIDTH, GRID_HEIGHT),
     pillsCollected: 0,
     lastKeyDirection: undefined,
-    currentScene: undefined,
+    currentScene: Scenes.INTRO,
     lifeCount: 3,
     extraLife: { active: false, collected: true, gx: 12, gy: 12 }, //TODO: extra life    
     selectedLevel: 0,
@@ -676,7 +676,11 @@ Game.drawHeader = function (ctx) {
 }
 
 Game.select = function () {
-    if (this.currentScene == Scenes.SELECT_LEVEL) {
+    if(this.overlay.active){
+        return
+    }
+    
+    if (this.currentScene == Scenes.SELECT_LEVEL) {        
         if (this.selectedLevel == this.targetLevel) {
             SOUNDS.hit.play();
             this.currentLevelNumber = this.selectedLevel + 1;
