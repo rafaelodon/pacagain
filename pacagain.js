@@ -830,13 +830,12 @@ Game.drawPill = function (x, y, ctx) {
 }
 
 Game.drawNibble = function (x, y, ctx) {
-    ctx.fillStyle = "black"
-    var value = (Math.sin(Loop.lastTime / 500 * Math.PI) / 2 + 0.5) * 0xFF | 0
-    var grayscale = (value << 16) | (value << 8) | value
-    var color = '#' + grayscale.toString(16)
+    
+    var value = (Math.sin(Loop.lastTime / 500 * Math.PI) / 2 + 0.5) * 1.0    
+    var color = 'rgba(255,255,0,'+value+")"
 
-    ctx.fillStyle = Colors.YELLOW
     ctx.beginPath()
+    ctx.fillStyle = color
     ctx.arc(x * TILE + HALF_TILE, y * TILE + HALF_TILE, HALF_TILE * 0.75, 0, 2 * Math.PI)
     ctx.fill()
 }
@@ -985,7 +984,17 @@ Game.detectPlayerGhostCollision = function () {
                 this.player.x <= ghost.x + HALF_TILE &&
                 this.player.y >= ghost.y - HALF_TILE &&
                 this.player.y <= ghost.y + HALF_TILE) {
-                return true
+
+                //TODO: refactor, separate responsibilities (ghost/player/game)
+                if(ghost.state !== GhostState.ECSTASY){
+                    this.player.onHitGhost()
+                    ghost.onHitPlayer()
+                    if (this.player.bodySIze === 0 &&
+                        this.player.recovering === 0) {
+                        this.decreasePlayerLife();
+                    }
+                }
+
             }
         }
     }
@@ -1101,8 +1110,8 @@ Game.triggerKey = function (x, y) {
 }
 
 Game.collectNibble = function (x, y) {
-    SOUNDS.collect.play(0.1)    
-    this.objects.get(x, y).collected = true    
+    SOUNDS.collect.play(0.1)
+    this.objects.get(x, y).collected = true
 }
 
 Game.collectPill = function (x, y) {
@@ -1134,7 +1143,7 @@ Game.collectExtraLife = function () {
     this.extraLife.collected = true
 }
 
-Game.hitPlayerAndGhost = function () {
+Game.decreasePlayerLife = function () {
     Soundtrack.pause()
     SOUNDS.die.play()
     this.player.state = PlayerState.HIT
@@ -1147,8 +1156,10 @@ Game.updateGhosts = function () {
         var ghost = this.currentLevel.enemies[i]
         ghost.game = Game
         if (this.playing) {
-            if (ghost.state == GhostState.DUMB) {
-                ghost.dumbWalk()
+            if (ghost.state === GhostState.DUMB) {
+                ghost.dumbWalk()            
+            } else if (ghost.state === GhostState.ECSTASY ) {
+                ghost.ecstasy()
             } else {
                 ghost.chaseWalk()
             }

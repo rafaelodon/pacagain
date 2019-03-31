@@ -1,7 +1,8 @@
 var GhostState = {
     DUMB: 0,
     CHASING: 1,
-    EXPLORING: 3
+    EXPLORING: 3,
+    ECSTASY: 4
 }
 
 function Ghost(id, gx, gy, options) {
@@ -11,242 +12,287 @@ function Ghost(id, gx, gy, options) {
         state: GhostState.DUMB,
         clockwise: true,
         speed: 1,
-        range: 6
+        range: 6,
+        freezingTime: 0
+
     }
 
-    options = (typeof options == "undefined") ? {} : options;
+    options = (typeof options == "undefined") ? {} : options
     for (var i in defaults) {
         if (typeof options[i] == "undefined") {
-            this[i] = defaults[i];
+            this[i] = defaults[i]
         } else {
-            this[i] = options[i];
+            this[i] = options[i]
         }
     }
 
-    this.id = id;
-    this.gx = gx;
-    this.gy = gy;
-    this.game = undefined;
-    this.initialState = JSON.parse(JSON.stringify(this));
+    this.id = id
+    this.gx = gx
+    this.gy = gy
+    this.game = undefined
+    this.initialState = JSON.parse(JSON.stringify(this))
 }
 
 Ghost.prototype.reset = function () {
     for (var i in this.initialState) {
-        this[i] = this.initialState[i];
+        this[i] = this.initialState[i]
     }
+}
+
+Ghost.prototype.onHitPlayer = function () {
+    this.state = GhostState.ECSTASY
+    this.freezingTime = 3
 }
 
 Ghost.prototype.dumbWalk = function () {
 
-    var tries = 0;
+    var tries = 0
     while (true) {
-        var destX = this.x + Directions.DELTA[this.direction].dx * TILE / 8 * this.speed;
-        var destY = this.y + Directions.DELTA[this.direction].dy * TILE / 8 * this.speed;
+        var destX = this.x + Directions.DELTA[this.direction].dx * TILE / 8 * this.speed
+        var destY = this.y + Directions.DELTA[this.direction].dy * TILE / 8 * this.speed
 
-        var gridX = parseInt((this.x + Directions.DELTA[this.direction].dx * (HALF_TILE + 0.5)) / TILE);
-        var gridY = parseInt((this.y + Directions.DELTA[this.direction].dy * (HALF_TILE + 0.5)) / TILE);
+        var gridX = parseInt((this.x + Directions.DELTA[this.direction].dx * (HALF_TILE + 0.5)) / TILE)
+        var gridY = parseInt((this.y + Directions.DELTA[this.direction].dy * (HALF_TILE + 0.5)) / TILE)
 
         if (!this.game.checkObstacle(gridX, gridY)) {
-            this.x = destX;
-            this.y = destY;
+            this.x = destX
+            this.y = destY
 
-            this.gx = gridX;
-            this.gy = gridY;
+            this.gx = gridX
+            this.gy = gridY
 
-            break;
+            break
         } else {
             if (this.clockwise) {
-                Directions.nextDirection(this);
+                Directions.nextDirection(this)
             } else {
-                Directions.previousDirection(this);
+                Directions.previousDirection(this)
             }
         }
-        tries++;
+        tries++
         if (tries > 4) {
-            break;
+            break
         }
     }
 }
 
 Ghost.prototype.chaseWalk = function () {
 
-    var r = Math.random();
-    var destX, destY, gridX, gridY;
+    var r = Math.random()
+    var destX, destY, gridX, gridY
 
     if ((this.x - HALF_TILE) % TILE == 0 && (this.y - HALF_TILE) % TILE == 0) {
 
-        var distance = this.distanceToPlayer(this.gx, this.gy, this.game.player);
+        var distance = this.distanceToPlayer(this.gx, this.gy, this.game.player)
         if (distance <= this.range) {
             if (this.state != GhostState.CHASING) {
-                this.state = GhostState.CHASING;
-                this.visitedTiles = new Grid(GRID_WIDTH, GRID_HEIGHT);
+                this.state = GhostState.CHASING
+                this.visitedTiles = new Grid(GRID_WIDTH, GRID_HEIGHT)
             }
         } else {
             if (this.state == GhostState.CHASING) {
-                this.visitedTiles = undefined;
+                this.visitedTiles = undefined
             }
-            this.state = GhostState.EXPLORING;
+            this.state = GhostState.EXPLORING
         }
 
         if (this.state) {
             if (this.state == GhostState.EXPLORING) {
                 if (r < 0.05) {
-                    Directions.nextDirection(this);
+                    Directions.nextDirection(this)
                 } else if (r < 0.1) {
-                    Directions.previousDirection(this);
+                    Directions.previousDirection(this)
                 }
             } else if (this.state == GhostState.CHASING) {
-                this.setNextChasingDirection();
+                this.setNextChasingDirection()
             }
         }
     }
 
-    var tries = 0;
+    var tries = 0
     while (true) {
-        destX = this.x + Directions.DELTA[this.direction].dx * TILE / 8 * this.speed;
-        destY = this.y + Directions.DELTA[this.direction].dy * TILE / 8 * this.speed;
+        destX = this.x + Directions.DELTA[this.direction].dx * TILE / 8 * this.speed
+        destY = this.y + Directions.DELTA[this.direction].dy * TILE / 8 * this.speed
 
-        gridX = parseInt((this.x + Directions.DELTA[this.direction].dx * (HALF_TILE + 0.5)) / TILE);
-        gridY = parseInt((this.y + Directions.DELTA[this.direction].dy * (HALF_TILE + 0.5)) / TILE);
+        gridX = parseInt((this.x + Directions.DELTA[this.direction].dx * (HALF_TILE + 0.5)) / TILE)
+        gridY = parseInt((this.y + Directions.DELTA[this.direction].dy * (HALF_TILE + 0.5)) / TILE)
 
         if (!this.game.checkObstacle(gridX, gridY)) {
-            this.x = destX;
-            this.y = destY;
+            this.x = destX
+            this.y = destY
 
             if (this.state == GhostState.CHASING &&
                 (this.gx != gridX || this.gy != gridY)) {
-                var visit = this.visitedTiles.get(gridX, gridY);
+                var visit = this.visitedTiles.get(gridX, gridY)
                 if (!visit) {
-                    this.visitedTiles.set(gridX, gridY, { count: 1, time: Loop.lastTime });
+                    this.visitedTiles.set(gridX, gridY, { count: 1, time: Loop.lastTime })
                 } else {
-                    this.visitedTiles.set(gridX, gridY, { count: visit.count + 1, time: Loop.lastTime });
+                    this.visitedTiles.set(gridX, gridY, { count: visit.count + 1, time: Loop.lastTime })
                 }
             }
 
 
-            this.gx = gridX;
-            this.gy = gridY;
+            this.gx = gridX
+            this.gy = gridY
 
-            break;
+            break
         } else {
             if (r < 0.5) {
-                Directions.nextDirection(this);
+                Directions.nextDirection(this)
             } else {
-                Directions.previousDirection(this);
+                Directions.previousDirection(this)
             }
         }
-        tries++;
+        tries++
         if (tries > 4) {
-            break;
+            break
         }
     }
 }
 
 
 Ghost.prototype.distanceToPlayer = function (x, y, player) {
-    var dx = player.gx - x;
-    var dy = player.gy - y;
-    return Math.sqrt(dx * dx + dy * dy);
+    var dx = player.gx - x
+    var dy = player.gy - y
+    return Math.sqrt(dx * dx + dy * dy)
 }
 
 Ghost.prototype.setNextChasingDirection = function () {
-    var nextX = this.gx;
-    var nextY = this.gy;
-    var smallestDistance = Number.MAX_SAFE_INTEGER;
+    var nextX = this.gx
+    var nextY = this.gy
+    var smallestDistance = Number.MAX_SAFE_INTEGER
     for (var x = -1; x <= 1; x++) {
         for (var y = -1; y <= 1; y++) {
             if ((x + y) * (x + y) != 1) { //consider only the cross
-                continue;
+                continue
             }
 
-            var ex = this.gx + x;
-            var ey = this.gy + y;
+            var ex = this.gx + x
+            var ey = this.gy + y
             if (ex > 0 && ex > 0
                 && ex < GRID_WIDTH && ey < GRID_HEIGHT
                 && !this.game.checkObstacle(ex, ey)) {
-                var distance = this.distanceToPlayer(ex, ey, this.game.player);
-                var visit = this.visitedTiles.get(ex, ey);
-                var visitCount = visit ? visit.count : 0;
+                var distance = this.distanceToPlayer(ex, ey, this.game.player)
+                var visit = this.visitedTiles.get(ex, ey)
+                var visitCount = visit ? visit.count : 0
                 if (distance + visitCount < smallestDistance) {
-                    nextX = ex;
-                    nextY = ey;
-                    smallestDistance = distance;
+                    nextX = ex
+                    nextY = ey
+                    smallestDistance = distance
                 }
             }
         }
     }
 
-    var dx = nextX - this.gx;
-    var dy = nextY - this.gy;
+    var dx = nextX - this.gx
+    var dy = nextY - this.gy
     if (dx * dx > dy * dy) {
         if (dx > 0) {
-            this.direction = Directions.RIGHT;
+            this.direction = Directions.RIGHT
         } else {
-            this.direction = Directions.LEFT;
+            this.direction = Directions.LEFT
         }
     } else {
         if (dy > 0) {
-            this.direction = Directions.DOWN;
+            this.direction = Directions.DOWN
         } else {
-            this.direction = Directions.UP;
+            this.direction = Directions.UP
         }
+    }
+}
+
+Ghost.prototype.ecstasy = function () {
+    if (this.freezingTime > 0) {
+        this.freezingTime -= Loop.ellapsedTime / 1000;
+        targetX = this.gx * TILE + HALF_TILE
+        targetY = this.gy * TILE + HALF_TILE
+        console.log("target: " + targetX + "," + targetY)
+        if (this.x != targetX || this.y != targetY) {
+            console.log("current: " + this.x + "," + this.y)
+            this.x += Directions.DELTA[this.direction].dx * TILE / 8 * this.speed
+            this.y += Directions.DELTA[this.direction].dy * TILE / 8 * this.speed
+        }
+    } else {
+        this.freezingTime = 0;
+        this.state = GhostState.EXPLORING;
     }
 }
 
 Ghost.prototype.draw = function (ctx, scale) {
 
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, scale / 2, Math.PI, 0);
-    ctx.fill();
+    ctx.fillStyle = this.color
+    ctx.beginPath()
+    ctx.arc(this.x, this.y, scale / 2, Math.PI, 0)
+    ctx.fill()
 
-    ctx.fillRect(this.x - scale / 2, this.y - 1, scale, scale / 2);
+    ctx.fillRect(this.x - scale / 2, this.y - 1, scale, scale / 2)
 
     if (this.state == GhostState.DUMB) {
-        ctx.fillStyle = "white";
-        ctx.beginPath();
-        ctx.arc(this.x + 0.70 * scale - scale / 2, this.y, scale / 5, 0, Math.PI);
-        ctx.arc(this.x + 0.30 * scale - scale / 2, this.y, scale / 5, 0, Math.PI);
-        ctx.fill();
-        ctx.fillStyle = "black";
-        ctx.beginPath();
+        ctx.fillStyle = "white"
+        ctx.beginPath()
+        ctx.arc(this.x + 0.70 * scale - scale / 2, this.y, scale / 5, 0, Math.PI)
+        ctx.arc(this.x + 0.30 * scale - scale / 2, this.y, scale / 5, 0, Math.PI)
+        ctx.fill()
+        ctx.fillStyle = "black"
+        ctx.beginPath()
         ctx.arc(this.x + 0.70 * scale + scale / 2 * (1.0 + Directions.DELTA[this.direction].dx / 5) - scale,
-            this.y - 1 + 1 * (1.0 + Directions.DELTA[this.direction].dy / 5), scale / 9, 0, Math.PI);
+            this.y - 1 + 1 * (1.0 + Directions.DELTA[this.direction].dy / 5), scale / 9, 0, Math.PI)
         ctx.arc(this.x + 0.30 * scale + scale / 2 * (1.0 + Directions.DELTA[this.direction].dx / 5) - scale,
-            this.y - 1 + 1 * (1.0 + Directions.DELTA[this.direction].dy / 5), scale / 9, 0, Math.PI);
-        ctx.fill();
+            this.y - 1 + 1 * (1.0 + Directions.DELTA[this.direction].dy / 5), scale / 9, 0, Math.PI)
+        ctx.fill()
     } else if (this.state == GhostState.EXPLORING) {
-        ctx.fillStyle = "white";
-        ctx.beginPath();
-        ctx.arc(this.x + 0.70 * scale - scale / 2, this.y, scale / 4, 0, 2 * Math.PI);
-        ctx.arc(this.x + 0.30 * scale - scale / 2, this.y, scale / 4, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.fillStyle = "black";
-        ctx.beginPath();
+        ctx.fillStyle = "white"
+        ctx.beginPath()
+        ctx.arc(this.x + 0.70 * scale - scale / 2, this.y, scale / 4, 0, 2 * Math.PI)
+        ctx.arc(this.x + 0.30 * scale - scale / 2, this.y, scale / 4, 0, 2 * Math.PI)
+        ctx.fill()
+        ctx.fillStyle = "black"
+        ctx.beginPath()
         ctx.arc(this.x + 0.70 * scale + scale / 2 * (1.0 + Directions.DELTA[this.direction].dx / 5) - scale,
-            this.y + 1 * (1.0 + Directions.DELTA[this.direction].dy / 5), scale / 8, 0, 2 * Math.PI);
+            this.y + 1 * (1.0 + Directions.DELTA[this.direction].dy / 5), scale / 8, 0, 2 * Math.PI)
         ctx.arc(this.x + 0.30 * scale + scale / 2 * (1.0 + Directions.DELTA[this.direction].dx / 5) - scale,
-            this.y + 1 * (1.0 + Directions.DELTA[this.direction].dy / 5), scale / 8, 0, 2 * Math.PI);
-        ctx.fill();
+            this.y + 1 * (1.0 + Directions.DELTA[this.direction].dy / 5), scale / 8, 0, 2 * Math.PI)
+        ctx.fill()
     } else if (this.state == GhostState.CHASING) {
-        ctx.fillStyle = "white";
-        ctx.beginPath();
-        ctx.arc(this.x + 0.70 * scale - scale / 2, this.y, scale / 4, Math.PI, 1.75 * Math.PI, true);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(this.x + 0.30 * scale - scale / 2, this.y, scale / 4, 1.25 * Math.PI, 0, true);
-        ctx.fill();
-        ctx.fillStyle = "black";
-        ctx.beginPath();
+        ctx.fillStyle = "white"
+        ctx.beginPath()
+        ctx.arc(this.x + 0.70 * scale - scale / 2, this.y, scale / 4, Math.PI, 1.75 * Math.PI, true)
+        ctx.fill()
+        ctx.beginPath()
+        ctx.arc(this.x + 0.30 * scale - scale / 2, this.y, scale / 4, 1.25 * Math.PI, 0, true)
+        ctx.fill()
+        ctx.fillStyle = "black"
+        ctx.beginPath()
         ctx.arc(this.x + 0.70 * scale + scale / 2 * (1.0 + Directions.DELTA[this.direction].dx / 5) - scale,
-            this.y + 1 * (1.0 + Directions.DELTA[this.direction].dy / 5), scale / 12, 0, 2 * Math.PI);
+            this.y + 1 * (1.0 + Directions.DELTA[this.direction].dy / 5), scale / 12, 0, 2 * Math.PI)
         ctx.arc(this.x + 0.30 * scale + scale / 2 * (1.0 + Directions.DELTA[this.direction].dx / 5) - scale,
-            this.y + 1 * (1.0 + Directions.DELTA[this.direction].dy / 5), scale / 12, 0, 2 * Math.PI);
-        ctx.fill();
+            this.y + 1 * (1.0 + Directions.DELTA[this.direction].dy / 5), scale / 12, 0, 2 * Math.PI)
+        ctx.fill()
+    } else if (this.state === GhostState.ECSTASY) {
+
+        eyeSize = scale/6 * (Math.sin(Loop.lastTime / 333 * Math.PI) / 2 + 0.5)
+        
+        ctx.fillStyle = "white"
+        ctx.beginPath()
+        ctx.arc(this.x + 0.70 * scale - scale / 2, this.y, scale / 4, 0, 2 * Math.PI)
+        ctx.arc(this.x + 0.30 * scale - scale / 2, this.y, scale / 4, 0, 2 * Math.PI)
+        ctx.fill()
+        ctx.fillStyle = "black"
+        ctx.beginPath()
+        ctx.arc(this.x + 0.70 * scale - scale / 2, this.y, eyeSize, 0, 2 * Math.PI)
+        ctx.arc(this.x + 0.30 * scale - scale / 2, this.y, eyeSize, 0, 2 * Math.PI)
+        ctx.fill()
+
+        //smile
+        ctx.fillStyle = "black"
+        ctx.beginPath()
+        ctx.arc(this.x, this.y + scale / 3.5, scale / 7, Math.PI, 0, true)
+        ctx.fill()
+
     }
 
     //debug point
-    //ctx.fillStyle = "red";
+    //ctx.fillStyle = "red"
     //ctx.fillRect(this.x, this.y, TILE/8, TILE/8);            
 }
 

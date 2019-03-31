@@ -64,6 +64,11 @@ Player.prototype.update = function () {
             this.recovering = 0
         }
 
+        if (this.body.length > this.bodySize) {
+            this.body.pop()
+            this.bodyDirections.pop()
+        }
+
         if (this.state === PlayerState.MOVING) {
 
             this.lastDirection = this.direction
@@ -133,10 +138,6 @@ Player.prototype.update = function () {
                             this.body[i].gy += Directions.DELTA[this.bodyDirections[i]].dy
                         }
                     }
-
-                    if (this.body.length > this.bodySize) {
-                        this.body.pop()
-                    }
                 }
 
                 //moves the pac-nibble body elements inside the tiles
@@ -164,16 +165,7 @@ Player.prototype.update = function () {
 
             this.detectOutOfBounds()
 
-            if (this.game.detectPlayerGhostCollision()) {
-                if (this.recovering == 0) {
-                    if (this.bodySize > 0) {
-                        this.bodySize -= 1
-                        this.recovering = 1
-                    } else {
-                        this.game.hitPlayerAndGhost()
-                    }
-                }
-            }
+            this.game.detectPlayerGhostCollision()
 
             if (this.game.checkPill(this.gx, this.gy)) {
                 this.game.collectPill(this.gx, this.gy)
@@ -202,6 +194,15 @@ Player.prototype.update = function () {
         this.mouthOpening += 0.1
         if (this.mouthOpening > 3) {
             this.state = PlayerState.DEAD
+        }
+    }
+}
+
+Player.prototype.onHitGhost = function () {
+    if (this.recovering == 0) {
+        if (this.bodySize > 0) {
+            this.bodySize -= 1
+            this.recovering = 1            
         }
     }
 }
@@ -245,7 +246,7 @@ Player.prototype.draw = function (ctx, scale) {
         this.mouthOpening = (Math.sin(Loop.lastTime / 333 * Math.PI) / 2 + 0.5)
     }
 
-    if(this.game.playing){
+    if (this.game.playing) {
         //draw the pac-nibble body
         this.body.forEach(b => {
             ctx.beginPath()
@@ -253,7 +254,7 @@ Player.prototype.draw = function (ctx, scale) {
             ctx.fill()
         })
     }
-    
+
     ctx.beginPath()
     ctx.arc(this.x, this.y, scale / 2, Math.PI * archStart, -this.mouthOpening + Math.PI * archEnd)
     ctx.arc(this.x, this.y, scale / 2, Math.PI * archStart, +this.mouthOpening + Math.PI * archEnd, true)
