@@ -83,8 +83,7 @@ Player.prototype.update = function () {
 
             gridX = parseInt((this.x + Directions.DELTA[this.direction].dx * (HALF_TILE + 0.5)) / TILE)
             gridY = parseInt((this.y + Directions.DELTA[this.direction].dy * (HALF_TILE + 0.5)) / TILE)
-
-            //FIX-ME: the next body element attached after a hit is in a messy position
+            
             while (this.body.length > this.bodySize) {
                 this.body.pop()
                 this.bodyDirections.pop()
@@ -109,7 +108,7 @@ Player.prototype.update = function () {
 
                     if (this.body.length < this.bodySize) {                        
                         //the first body element clones the pac head position
-                        if (this.bodySize <= 1) {
+                        if (this.bodySize == 1) {
                             ngx = this.gx
                             ngy = this.gy
                             this.body.unshift({
@@ -120,8 +119,8 @@ Player.prototype.update = function () {
                                 moving: false
                             })
                         } else {
-                            console.log(this.body)
-                            console.log(this.bodyDirections)
+                            console.log(this.body.length)
+                            console.log(this.bodyDirections.length)
                             console.log(this.bodySize)
                             //the next body elements, clones the body tail position
                             last = this.body.length - 1
@@ -135,15 +134,15 @@ Player.prototype.update = function () {
                                 y: ngy * TILE + HALF_TILE,
                                 moving: false
                             })
-                            console.log(this.body)
-                            console.log(this.bodyDirections)
+                            console.log(this.body.length)
+                            console.log(this.bodyDirections.length)
                             console.log(this.bodySize)
                         }                        
                     } else {
                         //if the body is fully assembled, register the elements grid position every tile change
-                        for (i = 0; i < this.body.length; i++) {
+                        for (i = 0; i < this.body.length; i++) {                            
                             this.body[i].gx += Directions.DELTA[this.bodyDirections[i]].dx
-                            this.body[i].gy += Directions.DELTA[this.bodyDirections[i]].dy
+                            this.body[i].gy += Directions.DELTA[this.bodyDirections[i]].dy                            
                         }                                                
                     }
                 }                
