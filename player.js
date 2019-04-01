@@ -61,13 +61,8 @@ Player.prototype.update = function () {
         if (this.recovering > 0) {
             this.recovering -= 0.01
         } else {
-            this.recovering = 0
-        }
-
-        if (this.body.length > this.bodySize) {
-            this.body.pop()
-            this.bodyDirections.pop()
-        }
+            this.recovering = 0            
+        }        
 
         if (this.state === PlayerState.MOVING) {
 
@@ -89,10 +84,16 @@ Player.prototype.update = function () {
             gridX = parseInt((this.x + Directions.DELTA[this.direction].dx * (HALF_TILE + 0.5)) / TILE)
             gridY = parseInt((this.y + Directions.DELTA[this.direction].dy * (HALF_TILE + 0.5)) / TILE)
 
+            //FIX-ME: the next body element attached after a hit is in a messy position
+            while (this.body.length > this.bodySize) {
+                this.body.pop()
+                this.bodyDirections.pop()
+            }
+
             if (!this.game.checkObstacle(gridX, gridY)) {
 
                 //Push or shifts the pac-nibble body
-                if (gridX != this.gx || gridY != this.gy) {
+                if (gridX != this.gx || gridY != this.gy) {                                        
 
                     if (this.bodySize > 0) {
                         //Push/pop elements from the pac-nibble body
@@ -106,9 +107,9 @@ Player.prototype.update = function () {
                         }
                     }
 
-                    if (this.body.length < this.bodySize) {
-                        //the first body element clones the pac position
-                        if (this.bodySize == 1) {
+                    if (this.body.length < this.bodySize) {                        
+                        //the first body element clones the pac head position
+                        if (this.bodySize <= 1) {
                             ngx = this.gx
                             ngy = this.gy
                             this.body.unshift({
@@ -119,10 +120,14 @@ Player.prototype.update = function () {
                                 moving: false
                             })
                         } else {
-                            //the next body elements, clones the last body position
+                            console.log(this.body)
+                            console.log(this.bodyDirections)
+                            console.log(this.bodySize)
+                            //the next body elements, clones the body tail position
                             last = this.body.length - 1
                             ngx = this.body[last].gx
                             ngy = this.body[last].gy
+                            console.log("Cloning: "+ngx+","+ngy)
                             this.body.push({
                                 gx: ngx,
                                 gy: ngy,
@@ -130,15 +135,18 @@ Player.prototype.update = function () {
                                 y: ngy * TILE + HALF_TILE,
                                 moving: false
                             })
-                        }
+                            console.log(this.body)
+                            console.log(this.bodyDirections)
+                            console.log(this.bodySize)
+                        }                        
                     } else {
                         //if the body is fully assembled, register the elements grid position every tile change
                         for (i = 0; i < this.body.length; i++) {
                             this.body[i].gx += Directions.DELTA[this.bodyDirections[i]].dx
                             this.body[i].gy += Directions.DELTA[this.bodyDirections[i]].dy
-                        }
+                        }                                                
                     }
-                }
+                }                
 
                 //moves the pac-nibble body elements inside the tiles
                 for (i = 0; i < this.body.length; i++) {
@@ -201,8 +209,9 @@ Player.prototype.update = function () {
 Player.prototype.onHitGhost = function () {
     if (this.recovering == 0) {
         if (this.bodySize > 0) {
-            this.bodySize -= 1
-            this.recovering = 1            
+            this.bodySize -= 1            
+            this.recovering = 1
+            SOUNDS.hit2.play()
         }
     }
 }

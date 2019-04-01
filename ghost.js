@@ -41,7 +41,7 @@ Ghost.prototype.reset = function () {
 
 Ghost.prototype.onHitPlayer = function () {
     this.state = GhostState.ECSTASY
-    this.freezingTime = 3
+    this.freezingTime = Loop.lastTime + 3000
 }
 
 Ghost.prototype.dumbWalk = function () {
@@ -202,13 +202,12 @@ Ghost.prototype.setNextChasingDirection = function () {
 }
 
 Ghost.prototype.ecstasy = function () {
-    if (this.freezingTime > 0) {
-        this.freezingTime -= Loop.ellapsedTime / 1000;
+    if (Loop.lastTime <= this.freezingTime) {
+        
+        //let the ghost center itself to the current tile
         targetX = this.gx * TILE + HALF_TILE
-        targetY = this.gy * TILE + HALF_TILE
-        console.log("target: " + targetX + "," + targetY)
-        if (this.x != targetX || this.y != targetY) {
-            console.log("current: " + this.x + "," + this.y)
+        targetY = this.gy * TILE + HALF_TILE        
+        if (this.x != targetX || this.y != targetY) {            
             this.x += Directions.DELTA[this.direction].dx * TILE / 8 * this.speed
             this.y += Directions.DELTA[this.direction].dy * TILE / 8 * this.speed
         }

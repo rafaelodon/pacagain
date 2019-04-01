@@ -62,8 +62,10 @@ Soundtrack.pause = function () {
 var SOUNDS = {
     beep: new GameSound("sound/beep.wav"),
     hit: new GameSound("sound/hit.wav"),
+    hit2: new GameSound("sound/hit2.wav"),
     jump: new GameSound("sound/jump.wav"),
     collect: new GameSound("sound/collect.wav"),
+    nibble: new GameSound("sound/nibble.wav"),
     die: new GameSound("sound/die.wav"),
     over: new GameSound("sound/over.wav"),
     win: new GameSound("sound/win.wav"),

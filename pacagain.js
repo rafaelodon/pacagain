@@ -108,8 +108,7 @@ Game.updateOverlay = function () {
 
         if (percent >= 0.9999) {
             this.overlay.active = false
-            if (this.overlay.oncomplete) {
-                console.log(Loop.lastTime - this.overlay.startTime)
+            if (this.overlay.oncomplete) {                
                 this.overlay.oncomplete(this)
             }
         }
@@ -830,9 +829,9 @@ Game.drawPill = function (x, y, ctx) {
 }
 
 Game.drawNibble = function (x, y, ctx) {
-    
-    var value = (Math.sin(Loop.lastTime / 500 * Math.PI) / 2 + 0.5) * 1.0    
-    var color = 'rgba(255,255,0,'+value+")"
+
+    var value = (Math.sin(Loop.lastTime / 500 * Math.PI) / 2 + 0.5) * 1.0
+    var color = 'rgba(255,255,0,' + value + ")"
 
     ctx.beginPath()
     ctx.fillStyle = color
@@ -986,10 +985,10 @@ Game.detectPlayerGhostCollision = function () {
                 this.player.y <= ghost.y + HALF_TILE) {
 
                 //TODO: refactor, separate responsibilities (ghost/player/game)
-                if(ghost.state !== GhostState.ECSTASY){
+                if (ghost.state !== GhostState.ECSTASY) {
                     this.player.onHitGhost()
                     ghost.onHitPlayer()
-                    if (this.player.bodySIze === 0 &&
+                    if (this.player.bodySize === 0 &&
                         this.player.recovering === 0) {
                         this.decreasePlayerLife();
                     }
@@ -1110,7 +1109,7 @@ Game.triggerKey = function (x, y) {
 }
 
 Game.collectNibble = function (x, y) {
-    SOUNDS.collect.play(0.1)
+    SOUNDS.nibble.play(0.1)
     this.objects.get(x, y).collected = true
 }
 
@@ -1157,8 +1156,8 @@ Game.updateGhosts = function () {
         ghost.game = Game
         if (this.playing) {
             if (ghost.state === GhostState.DUMB) {
-                ghost.dumbWalk()            
-            } else if (ghost.state === GhostState.ECSTASY ) {
+                ghost.dumbWalk()
+            } else if (ghost.state === GhostState.ECSTASY) {
                 ghost.ecstasy()
             } else {
                 ghost.chaseWalk()
