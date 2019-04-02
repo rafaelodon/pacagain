@@ -8,9 +8,9 @@
 var Game = {
     ctx: undefined,
     auxCanvas: undefined,
-    currentLevelNumber: 13,
+    currentLevelNumber: 1,
     currentLevel: LEVELS[0],
-    nextAvaiableLevel: 14,
+    nextAvaiableLevel: 1,
     overlay: {},
     player: new Player(12, 13),
     playing: true,
