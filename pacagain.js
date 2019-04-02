@@ -8,9 +8,9 @@
 var Game = {
     ctx: undefined,
     auxCanvas: undefined,
-    currentLevelNumber: 5,
+    currentLevelNumber: 13,
     currentLevel: LEVELS[0],
-    nextAvaiableLevel: 5,
+    nextAvaiableLevel: 14,
     overlay: {},
     player: new Player(12, 13),
     playing: true,
@@ -20,7 +20,7 @@ var Game = {
     lastKeyDirection: undefined,
     currentScene: Scenes.INTRO,
     lifeCount: 3,
-    extraLife: { active: false, collected: true, gx: 12, gy: 12 }, //TODO: extra life    
+    extraLife: { active: false, collected: true, gx: 12, gy: 12 }, // TODO: transform extra-life to grid object
     selectedLevel: 0,
     targetLevel: 5,
     levelsMap: undefined
@@ -108,7 +108,7 @@ Game.updateOverlay = function () {
 
         if (percent >= 0.9999) {
             this.overlay.active = false
-            if (this.overlay.oncomplete) {                
+            if (this.overlay.oncomplete) {
                 this.overlay.oncomplete(this)
             }
         }
@@ -801,10 +801,16 @@ Game.drawBackground = function (ctx) {
 }
 
 Game.drawPills = function (ctx) {
+    
+    ctx.fillStyle = "black"
+    var value = (Math.sin(Loop.lastTime / 500 * Math.PI) / 2 + 0.5) * 0xFF | 0
+    var grayscale = (value << 16) | (value << 8) | value
+    var color = '#' + grayscale.toString(16)
+
     for (var x = 0; x < GRID_WIDTH; x++) {
         for (var y = 0; y < GRID_HEIGHT; y++) {
             if (this.checkPill(x, y)) {
-                this.drawPill(x, y, ctx)
+                this.drawPill(x, y, color, ctx)
             } else if (this.checkDoor(x, y)) {
                 this.drawDoor(x, y, this.objects.get(x, y), ctx)
             } else if (this.checkKey(x, y)) {
@@ -816,12 +822,7 @@ Game.drawPills = function (ctx) {
     }
 }
 
-Game.drawPill = function (x, y, ctx) {
-    ctx.fillStyle = "black"
-    var value = (Math.sin(Loop.lastTime / 500 * Math.PI) / 2 + 0.5) * 0xFF | 0
-    var grayscale = (value << 16) | (value << 8) | value
-    var color = '#' + grayscale.toString(16)
-
+Game.drawPill = function (x, y, color, ctx) {    
     ctx.fillStyle = color
     ctx.beginPath()
     ctx.arc(x * TILE + HALF_TILE, y * TILE + HALF_TILE, HALF_TILE * 0.3, 0, 2 * Math.PI)
@@ -955,6 +956,11 @@ Game.checkObstacle = function (x, y) {
     return (this.currentLevel.map[y] && this.currentLevel.map[y].charAt(x) == '#') || this.checkDoor(x, y)
 }
 
+Game.checkOutOfBounds = function (gx, gy) {    
+    r = gx < 0 || gx > GRID_WIDTH-1 || gy < 1 || gy > GRID_HEIGHT-1    
+    return r
+}
+
 Game.checkDoor = function (x, y) {
     return this.objects.get(x, y)
         && this.objects.get(x, y).type == Objects.DOOR
@@ -964,8 +970,7 @@ Game.checkDoor = function (x, y) {
 Game.checkEnemies = function (x, y, enemy) {
     for (var i = 0; i < this.currentLevel.enemies.length; i++) {
         var other = this.currentLevel.enemies[i]
-        if ((enemy == undefined || enemy.id != other.id) &&
-            other.gx == x && other.gy == y) {
+        if (other.id != enemy.id && other.gx == x && other.gy == y) {            
             return true
         }
     }

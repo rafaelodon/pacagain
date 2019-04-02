@@ -54,7 +54,7 @@ Ghost.prototype.dumbWalk = function () {
         var gridX = parseInt((this.x + Directions.DELTA[this.direction].dx * (HALF_TILE + 0.5)) / TILE)
         var gridY = parseInt((this.y + Directions.DELTA[this.direction].dy * (HALF_TILE + 0.5)) / TILE)
 
-        if (!this.game.checkObstacle(gridX, gridY)) {
+        if (!this.game.checkObstacle(gridX, gridY) && !this.game.checkOutOfBounds(gridX, gridY)) {
             this.x = destX
             this.y = destY
 
@@ -117,7 +117,9 @@ Ghost.prototype.chaseWalk = function () {
         gridX = parseInt((this.x + Directions.DELTA[this.direction].dx * (HALF_TILE + 0.5)) / TILE)
         gridY = parseInt((this.y + Directions.DELTA[this.direction].dy * (HALF_TILE + 0.5)) / TILE)
 
-        if (!this.game.checkObstacle(gridX, gridY)) {
+        if (!this.game.checkObstacle(gridX, gridY) &&
+            !this.game.checkEnemies(gridX, gridY, this) &&
+            !this.game.checkOutOfBounds(gridX, gridY)) {
             this.x = destX
             this.y = destY
 
@@ -203,17 +205,17 @@ Ghost.prototype.setNextChasingDirection = function () {
 
 Ghost.prototype.ecstasy = function () {
     if (Loop.lastTime <= this.freezingTime) {
-        
+
         //let the ghost center itself to the current tile
         targetX = this.gx * TILE + HALF_TILE
-        targetY = this.gy * TILE + HALF_TILE        
-        if (this.x != targetX || this.y != targetY) {            
+        targetY = this.gy * TILE + HALF_TILE
+        if (this.x != targetX || this.y != targetY) {
             this.x += Directions.DELTA[this.direction].dx * TILE / 8 * this.speed
             this.y += Directions.DELTA[this.direction].dy * TILE / 8 * this.speed
         }
     } else {
-        this.freezingTime = 0;
-        this.state = GhostState.EXPLORING;
+        this.freezingTime = 0
+        this.state = GhostState.EXPLORING
     }
 }
 
@@ -269,8 +271,8 @@ Ghost.prototype.draw = function (ctx, scale) {
         ctx.fill()
     } else if (this.state === GhostState.ECSTASY) {
 
-        eyeSize = scale/6 * (Math.sin(Loop.lastTime / 333 * Math.PI) / 2 + 0.5)
-        
+        eyeSize = scale / 6 * (Math.sin(Loop.lastTime / 333 * Math.PI) / 2 + 0.5)
+
         ctx.fillStyle = "white"
         ctx.beginPath()
         ctx.arc(this.x + 0.70 * scale - scale / 2, this.y, scale / 4, 0, 2 * Math.PI)
@@ -294,6 +296,3 @@ Ghost.prototype.draw = function (ctx, scale) {
     //ctx.fillStyle = "red"
     //ctx.fillRect(this.x, this.y, TILE/8, TILE/8);            
 }
-
-//TODO: check ghost out of bounds (block or teletransport?)
-//TODO: check if theres no in the target tile (they are overlapping each othe during the chase)

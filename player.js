@@ -91,11 +91,11 @@ Player.prototype.update = function () {
 
             if (!this.game.checkObstacle(gridX, gridY)) {
 
-                //Push or shifts the pac-nibble body
+                //push or shifts the pac-nibble body
                 if (gridX != this.gx || gridY != this.gy) {                                        
 
                     if (this.bodySize > 0) {
-                        //Push/pop elements from the pac-nibble body
+                        //push/pop elements from the pac-nibble body
                         this.bodyDirections.unshift(this.lastDirection)
                         if (this.bodyDirections.length > this.bodySize) {
                             this.bodyDirections.pop()
@@ -118,33 +118,28 @@ Player.prototype.update = function () {
                                 y: ngy * TILE + HALF_TILE,
                                 moving: false
                             })
-                        } else {
-                            console.log(this.body.length)
-                            console.log(this.bodyDirections.length)
-                            console.log(this.bodySize)
+                        } else {                                   
                             //the next body elements, clones the body tail position
                             last = this.body.length - 1
                             ngx = this.body[last].gx
-                            ngy = this.body[last].gy
-                            console.log("Cloning: "+ngx+","+ngy)
+                            ngy = this.body[last].gy                            
                             this.body.push({
                                 gx: ngx,
                                 gy: ngy,
                                 x: ngx * TILE + HALF_TILE,
                                 y: ngy * TILE + HALF_TILE,
                                 moving: false
-                            })
-                            console.log(this.body.length)
-                            console.log(this.bodyDirections.length)
-                            console.log(this.bodySize)
+                            })                            
                         }                        
-                    } else {
-                        //if the body is fully assembled, register the elements grid position every tile change
-                        for (i = 0; i < this.body.length; i++) {                            
-                            this.body[i].gx += Directions.DELTA[this.bodyDirections[i]].dx
-                            this.body[i].gy += Directions.DELTA[this.bodyDirections[i]].dy                            
-                        }                                                
                     }
+                    
+                    //keep track of the body elements grid position every tile change                    
+                    for (i = 0; i < this.body.length; i++) {                            
+                        if(this.body[i].moving){                                                            
+                            this.body[i].gx += Directions.DELTA[this.bodyDirections[i]].dx
+                            this.body[i].gy += Directions.DELTA[this.bodyDirections[i]].dy                                                        
+                        }
+                    }                    
                 }                
 
                 //moves the pac-nibble body elements inside the tiles
@@ -268,15 +263,16 @@ Player.prototype.draw = function (ctx, scale) {
     ctx.arc(this.x, this.y, scale / 2, Math.PI * archStart, +this.mouthOpening + Math.PI * archEnd, true)
     ctx.fill()
 
-
     //debug point
     //ctx.fillStyle = "red"
     //ctx.fillRect(this.x, this.y, TILE/8, TILE/8);            
 }
 
 Player.prototype.detectOutOfBounds = function () {
+    //TODO: manage pac-nibble body when teleporting
+
     if (this.gx < 0) {
-        this.moveTo(GRID_WIDTH, this.gy)
+        this.moveTo(GRID_WIDTH, this.gy)        
         return
     }
 
@@ -285,7 +281,7 @@ Player.prototype.detectOutOfBounds = function () {
         return
     }
 
-    if (this.gy < 1) { // a primeira linha é a barra de status
+    if (this.gy < 1) { // the first grid line is occupied by the status bar in the level scene
         this.moveTo(this.gx, GRID_HEIGHT)
         return
     }
