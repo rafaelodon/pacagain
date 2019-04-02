@@ -717,7 +717,7 @@ Game.moveLeft = function () {
     this.lastKeyDirection = Directions.LEFT
 }
 
-Game.continueOnKeyOrTouch = function () {
+Game.continueOnKeyOrTouch = function (key) {
     if (this.currentScene == Scenes.PRE_LEVEL) {
         this.currentScene = Scenes.GAME
         this.resetEnemies()
@@ -738,8 +738,10 @@ Game.continueOnKeyOrTouch = function () {
         this.currentScene = Scenes.SELECT_LEVEL
 
         return true
+    } else if(this.currentScene == Scenes.SELECT_LEVEL) {
+        this.select()
+	return true
     }
-
     return false
 }
 

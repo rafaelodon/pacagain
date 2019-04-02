@@ -63,7 +63,6 @@ function keyDown(e) {
 }
 
 function onTouchStart(e) {
-    Game.continueOnKeyOrTouch();
     touch.x = e.changedTouches[0].pageX;
     touch.y = e.changedTouches[0].pageY;
 }
@@ -71,6 +70,13 @@ function onTouchStart(e) {
 function onTouchEnd(e) {
     var dx = e.changedTouches[0].pageX - touch.x;
     var dy = e.changedTouches[0].pageY - touch.y;
+
+    if(dx * dx <= 2 && dy * dy <= 2){
+	Game.continueOnKeyOrTouch(e.key)
+	e.preventDefault()
+	return
+    }
+	
     if (dx * dx > dy * dy) {
         if (dx > 0) {
             Game.moveRight();        
