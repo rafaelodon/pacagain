@@ -61,8 +61,8 @@ Player.prototype.update = function () {
         if (this.recovering > 0) {
             this.recovering -= 0.01
         } else {
-            this.recovering = 0            
-        }        
+            this.recovering = 0
+        }
 
         if (this.state === PlayerState.MOVING) {
 
@@ -83,7 +83,7 @@ Player.prototype.update = function () {
 
             gridX = parseInt((this.x + Directions.DELTA[this.direction].dx * (HALF_TILE + 0.5)) / TILE)
             gridY = parseInt((this.y + Directions.DELTA[this.direction].dy * (HALF_TILE + 0.5)) / TILE)
-            
+
             while (this.body.length > this.bodySize) {
                 this.body.pop()
                 this.bodyDirections.pop()
@@ -92,7 +92,7 @@ Player.prototype.update = function () {
             if (!this.game.checkObstacle(gridX, gridY)) {
 
                 //push or shifts the pac-nibble body
-                if (gridX != this.gx || gridY != this.gy) {                                        
+                if (gridX != this.gx || gridY != this.gy) {
 
                     if (this.bodySize > 0) {
                         //push/pop elements from the pac-nibble body
@@ -106,7 +106,7 @@ Player.prototype.update = function () {
                         }
                     }
 
-                    if (this.body.length < this.bodySize) {                        
+                    if (this.body.length < this.bodySize) {
                         //the first body element clones the pac head position
                         if (this.bodySize == 1) {
                             ngx = this.gx
@@ -118,29 +118,48 @@ Player.prototype.update = function () {
                                 y: ngy * TILE + HALF_TILE,
                                 moving: false
                             })
-                        } else {                                   
+                        } else {
                             //the next body elements, clones the body tail position
                             last = this.body.length - 1
                             ngx = this.body[last].gx
-                            ngy = this.body[last].gy                            
+                            ngy = this.body[last].gy
                             this.body.push({
                                 gx: ngx,
                                 gy: ngy,
                                 x: ngx * TILE + HALF_TILE,
                                 y: ngy * TILE + HALF_TILE,
                                 moving: false
-                            })                            
-                        }                        
-                    }
-                    
-                    //keep track of the body elements grid position every tile change                    
-                    for (i = 0; i < this.body.length; i++) {                            
-                        if(this.body[i].moving){                                                            
-                            this.body[i].gx += Directions.DELTA[this.bodyDirections[i]].dx
-                            this.body[i].gy += Directions.DELTA[this.bodyDirections[i]].dy                                                        
+                            })
                         }
-                    }                    
-                }                
+                    }
+
+                    //keep track of the body elements grid position every tile change                    
+                    for (var i = 0; i < this.body.length; i++) {
+                        var b = this.body[i]
+                        if (b.moving) {
+                            b.gx += Directions.DELTA[this.bodyDirections[i]].dx
+                            b.gy += Directions.DELTA[this.bodyDirections[i]].dy
+
+                            //TODO/FIXME: body elements transposition when out-of-bounds
+                            if (b.gx < 0) {
+                                b.gx = b.gx * -1 + GRID_WIDTH
+                                b.x = b.gx * TILE + HALF_TILE
+                            } else if (b.gx > GRID_WIDTH) {
+                                b.gx = b.gx * -1 + GRID_WIDTH - 1
+                                b.x = b.gx * TILE + HALF_TILE
+                                console.log(b)
+                            }
+
+                            if (b.gy < 1) {
+                                b.gy = b.gy * -1 + GRID_HEIGHT
+                                b.y = b.gy * TILE + HALF_TILE
+                            } else if (b.gy > GRID_HEIGHT) {
+                                b.gy = b.gy * -1 - GRID_HEIGHT
+                                b.y = b.gy * TILE + HALF_TILE
+                            }
+                        }
+                    }
+                }
 
                 //moves the pac-nibble body elements inside the tiles
                 for (i = 0; i < this.body.length; i++) {
@@ -203,7 +222,7 @@ Player.prototype.update = function () {
 Player.prototype.onHitGhost = function () {
     if (this.recovering == 0) {
         if (this.bodySize > 0) {
-            this.bodySize -= 1            
+            this.bodySize -= 1
             this.recovering = 1
             SOUNDS.hit2.play()
         }
@@ -272,7 +291,7 @@ Player.prototype.detectOutOfBounds = function () {
     //TODO: manage pac-nibble body when teleporting
 
     if (this.gx < 0) {
-        this.moveTo(GRID_WIDTH, this.gy)        
+        this.moveTo(GRID_WIDTH, this.gy)
         return
     }
 

@@ -5,9 +5,9 @@ window.onload = function () {
 
     document.onkeydown = keyDown;
     document.body.addEventListener('touchstart', onTouchStart, { passive: false });
-    document.body.addEventListener('touchend', onTouchEnd, { passive: false });    
+    document.body.addEventListener('touchend', onTouchEnd, { passive: false });
 
-    document.getElementById("canvas").addEventListener('click', function (e){
+    document.getElementById("canvas").addEventListener('click', function (e) {
         e.preventDefault();
         Game.select();
     });
@@ -71,15 +71,15 @@ function onTouchEnd(e) {
     var dx = e.changedTouches[0].pageX - touch.x;
     var dy = e.changedTouches[0].pageY - touch.y;
 
-    if(dx * dx <= 2 && dy * dy <= 2){
-	Game.continueOnKeyOrTouch(e.key)
-	e.preventDefault()
-	return
+    if (dx * dx <= 2 && dy * dy <= 2) {
+        Game.touch()
+        e.preventDefault()
+        return
     }
-	
+
     if (dx * dx > dy * dy) {
         if (dx > 0) {
-            Game.moveRight();        
+            Game.moveRight();
         } else {
             Game.moveLeft();
         }

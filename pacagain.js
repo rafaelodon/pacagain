@@ -618,7 +618,7 @@ Game.drawLevelsMap = function (ctx) {
     }
 
     this.displayTextWidthShadow(ctx, "SELECT A LEVEL", REAL_WIDTH / 2, TILE, TILE * 2)
-    this.displayTextWidthShadow(ctx, "Use arrows to navigate. Push space to select...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 2, TILE * 0.75)
+    this.displayTextWidthShadow(ctx, "Swipte or use arrows to navigate. Touch or push space to select...", REAL_WIDTH / 2, REAL_HEIGHT - TILE * 2, TILE * 0.75)
 }
 
 Game.drawTube = function (ctx, x, y, width, height, color) {
@@ -678,6 +678,47 @@ Game.drawHeader = function (ctx) {
         REAL_WIDTH / 2, TILE * 0.4, TILE * 0.8)
 }
 
+Game.moveUp = function () {
+    this.lastKeyDirection = Directions.UP
+}
+
+Game.moveDown = function () {
+    this.lastKeyDirection = Directions.DOWN
+}
+
+Game.moveRight = function () {
+    this.lastKeyDirection = Directions.RIGHT
+}
+
+Game.moveLeft = function () {
+    this.lastKeyDirection = Directions.LEFT
+}
+
+Game.continueOnKeyOrTouch = function (key) {
+
+    if (this.currentScene == Scenes.PRE_LEVEL) {
+        this.currentScene = Scenes.GAME
+        this.resetEnemies()
+        this.resetPlayer()
+        this.playing = true
+        return true
+
+    } else if (this.currentScene == Scenes.LEVEL_COMPLETED) {
+        if (this.currentLevelNumber >= LEVELS.length) {
+            this.currentScene = Scenes.WIN
+        } else {
+            this.goToLevelsMap()
+        }
+        return true
+
+    } else if (this.currentScene == Scenes.INTRO) {
+        this.currentScene = Scenes.SELECT_LEVEL
+        return true
+    }
+
+    return false
+}
+
 Game.select = function () {
     if (this.overlay.active) {
         return
@@ -701,48 +742,13 @@ Game.select = function () {
     }
 }
 
-Game.moveUp = function () {
-    this.lastKeyDirection = Directions.UP
-}
 
-Game.moveDown = function () {
-    this.lastKeyDirection = Directions.DOWN
-}
-
-Game.moveRight = function () {
-    this.lastKeyDirection = Directions.RIGHT
-}
-
-Game.moveLeft = function () {
-    this.lastKeyDirection = Directions.LEFT
-}
-
-Game.continueOnKeyOrTouch = function (key) {
-    if (this.currentScene == Scenes.PRE_LEVEL) {
-        this.currentScene = Scenes.GAME
-        this.resetEnemies()
-        this.resetPlayer()
-        this.playing = true
-
-        return true
-
-    } else if (this.currentScene == Scenes.LEVEL_COMPLETED) {
-        if (this.currentLevelNumber >= LEVELS.length) {
-            this.currentScene = Scenes.WIN
-        } else {
-            this.goToLevelsMap()
-        }
-        return true
-
-    } else if (this.currentScene == Scenes.INTRO) {
-        this.currentScene = Scenes.SELECT_LEVEL
-
-        return true
-    } else if(this.currentScene == Scenes.SELECT_LEVEL) {
+Game.touch = function () {
+    if (this.currentScene === Scenes.SELECT_LEVEL) {
         this.select()
-	return true
+    } else {
+        this.continueOnKeyOrTouch()
     }
-    return false
 }
 
 Game.resetLevel = function () {
@@ -803,7 +809,7 @@ Game.drawBackground = function (ctx) {
 }
 
 Game.drawPills = function (ctx) {
-    
+
     ctx.fillStyle = "black"
     var value = (Math.sin(Loop.lastTime / 500 * Math.PI) / 2 + 0.5) * 0xFF | 0
     var grayscale = (value << 16) | (value << 8) | value
@@ -824,7 +830,7 @@ Game.drawPills = function (ctx) {
     }
 }
 
-Game.drawPill = function (x, y, color, ctx) {    
+Game.drawPill = function (x, y, color, ctx) {
     ctx.fillStyle = color
     ctx.beginPath()
     ctx.arc(x * TILE + HALF_TILE, y * TILE + HALF_TILE, HALF_TILE * 0.3, 0, 2 * Math.PI)
@@ -958,8 +964,8 @@ Game.checkObstacle = function (x, y) {
     return (this.currentLevel.map[y] && this.currentLevel.map[y].charAt(x) == '#') || this.checkDoor(x, y)
 }
 
-Game.checkOutOfBounds = function (gx, gy) {    
-    r = gx < 0 || gx > GRID_WIDTH-1 || gy < 1 || gy > GRID_HEIGHT-1    
+Game.checkOutOfBounds = function (gx, gy) {
+    r = gx < 0 || gx > GRID_WIDTH - 1 || gy < 1 || gy > GRID_HEIGHT - 1
     return r
 }
 
@@ -972,7 +978,7 @@ Game.checkDoor = function (x, y) {
 Game.checkEnemies = function (x, y, enemy) {
     for (var i = 0; i < this.currentLevel.enemies.length; i++) {
         var other = this.currentLevel.enemies[i]
-        if (other.id != enemy.id && other.gx == x && other.gy == y) {            
+        if (other.id != enemy.id && other.gx == x && other.gy == y) {
             return true
         }
     }
