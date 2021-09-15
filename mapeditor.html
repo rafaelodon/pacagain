@@ -26,16 +26,33 @@
                 font-family: 'Dosis';
                 src: url('fonts/Dosis-Bold.ttf');
                 font-weight: bold;
-            }            
+            }     
+            #levelText {
+                width: 80%;
+                height: 400px;
+                font-size: 0.8em;
+                font-family: monospace;
+            }       
         </style>
     </head>
-    <body>                        
-        <div class="container">
-            <form id="tools" class="text-center">
-                <input type="button" class="btn btn-success" name="play" id="play" value="play" />
-            </form>
+    <body>                     
+        <div class="row">
+            <div class="col">        
+                <div class="container">            
+                    <form id="tools" class="text-center">
+                        <input type="button" class="btn btn-success" name="play" id="play" value="play" />
+                    </form>
+                </div>
+                <canvas id="canvas"></canvas>  
+            </div>
+            <div class="col">
+                <div class="text-center">
+                    <input type="button" class="btn btn-primary" name="export" id="export" value="export" />                     
+                    <br/>
+                    <textarea id="levelText"></textarea>
+                </div>    
+            </div>
         </div>
-        <canvas id="canvas"></canvas>                           
         <script type="text/javascript" src="consts.js"></script>                        
         <script type="text/javascript" src="roundrect.js"></script>                        
         <script type="text/javascript" src="sound.js"></script>                        

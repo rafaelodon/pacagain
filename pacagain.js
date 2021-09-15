@@ -1323,3 +1323,23 @@ Game.stopEditorLevel = function () {
     this.preRenderLevel(this.ctx); 
     this.clearCanvas(this.ctx);                
 }
+
+Game.exportCurrentLevel = function() {
+    var text = "{\n";
+    text += "   instruction: '"+this.currentLevel.instruction+"',\n";
+    text += "   extraLife: "+this.currentLevel.extraLife+",\n";
+    text += "   wallsColor: '"+this.currentLevel.wallsColor+"',\n";
+    text += "   map: [\n";
+    this.currentLevel.map.forEach(m => 
+        text += "            '"+m+"',\n"
+    )
+    text += "   ],\n";
+    text += "   enemies: [\n";
+    this.currentLevel.enemies.forEach(e => {
+        colorKey = Object.keys(Colors).filter(key => Colors[key] == e.color);        
+        text += "        new Ghost("+e.id+", "+e.gx+", "+e.gy+", { color: Colors."+colorKey+" }),\n"
+    });
+    text += "   ],\n";
+    text += "}";
+    return text;
+}

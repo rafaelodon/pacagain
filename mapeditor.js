@@ -70,6 +70,11 @@ window.onload = function () {
         }
     });   
 
+    document.getElementById("export").addEventListener('click', function (e) {
+        var text = Game.exportCurrentLevel();
+        document.getElementById("levelText").value = text;
+    });
+
     document.onkeydown = keyDown;true
 
     Game.setCanvas(document.getElementById("canvas"));        
