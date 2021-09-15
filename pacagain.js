@@ -47,13 +47,14 @@ Game.setCanvas = function (canvas) {
         scale = scaleX
     } else {
         scale = scaleY
-    }
+    }    
 
     canvas.width = GRID_WIDTH * TILE * scale
     canvas.height = GRID_HEIGHT * TILE * scale
 
     this.ctx = canvas.getContext("2d")
     this.ctx.scale(scale, scale)
+    this.scale = scale
 }
 
 Game.resetAll = function () {
@@ -475,9 +476,13 @@ Game.draw = function () {
             ghost.color = colors[i]
             ghost.draw(ctx, TILE * 2)
         }
-    }
-
-    this.drawOverlayAfter(ctx)
+    } else if (this.currentScene == Scenes.MAP_EDITOR) {        
+        this.clearCanvas(ctx)
+        this.drawEnemies(ctx)
+        this.drawExtraLife(ctx)
+        this.player.draw(ctx, TILE)
+        this.drawHeader(ctx)
+    }    
 }
 
 Game.drawLevelsMap = function (ctx) {
@@ -1205,4 +1210,116 @@ Game.goToLevelsMap = function () {
     this.lastKeyDirection = undefined
     this.currentScene = Scenes.SELECT_LEVEL
     this.displayFadeOutOverlay()
+}
+
+Game.mapEditor = function() {
+    /*
+    LEVELS = [{
+        instruction: "Map instructions",
+        enemies: [],
+        wallsColor: "#FF000",
+        map: [
+            "#########################",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#           p           #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#          .            #",
+            "#                       #",
+            "#                       #",
+            "#                       #",
+            "#########################"
+        ]
+    }]*/
+    this.resetAll();
+    this.prepareLevel();
+    this.preRenderLevel();
+    this.currentScene = Scenes.MAP_EDITOR;    
+    this.isEditingMap = true;
+}
+
+Game.setMapEditorTool = function(tool) {
+    this.currentMapEditorTool = tool;
+    this.lastEditedX = undefined
+    this.lastEditedY = undefined
+}
+
+Game.useToolOnPosition = function(x,y) {
+    if(x != this.lastEditedX || y != this.lastEditedY){
+        if(this.isEditingMap && this.currentMapEditorTool){        
+
+            var xTile = parseInt(x/TILE/this.scale);
+            var yTile = parseInt(y/TILE/this.scale);
+
+            var char = " ";
+            switch(this.currentMapEditorTool) {
+                case MapEditorTools.EMPTY: char = " "; break;
+                case MapEditorTools.WALL: char = "#"; break;
+                case MapEditorTools.DOT: char = "."; break;
+                case MapEditorTools.PAC: char = "p"; break;
+                case MapEditorTools.NIBBLE: char = "@"; break;            
+            }
+            
+            //Remove ghosts and objects from that positions if empty tool
+            if(this.currentMapEditorTool == MapEditorTools.EMPTY) {
+                this.currentLevel.enemies = this.currentLevel.enemies.filter(
+                    e => e.gx == xTile && e.hy == yTile
+                )
+                this.objects.clearPosition(xTile, yTile);
+            }
+
+            if(this.currentMapEditorTool == MapEditorTools.GHOST) {
+                this.currentLevel.enemies.push(
+                    new Ghost(1, xTile, yTile, { color: Colors.RED, state: GhostState.EXPLORING })
+                );
+                this.resetEnemies();
+                this.updateGhosts();
+            }
+                               
+            var row = this.currentLevel.map[yTile];        
+            row = row.substring(0, xTile) + char + row.substring(xTile + 1);
+            this.currentLevel.map[yTile] = row;        
+
+            this.resetMapObjects();
+            this.preRenderLevel(this.ctx); 
+            this.clearCanvas(this.ctx);            
+            //this.drawEnemies(this.ctx);
+
+            this.lastEditedX = xTile;
+            this.lastEditedY = yTile;                
+            console.log(xTile+","+yTile);
+        }           
+    }
+}
+
+Game.playEditorLevel = function () {
+    this.currentScene = Scenes.GAME;
+    this.preservedLevel = this.currentLevel;
+    this.playing = true;
+    this.currentMapEditorTool = undefined;
+}
+
+Game.stopEditorLevel = function () {
+    this.playing = false;
+    this.currentScene = Scenes.MAP_EDITOR;
+    this.currentLevel = this.preservedLevel;    
+    this.resetAll();
+    this.preRenderLevel(this.ctx); 
+    this.clearCanvas(this.ctx);                
 }

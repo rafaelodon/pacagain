@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Pac-Again - By Rafael Odon</title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />        
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">    
+        <style>            
+            body{
+                background: black;
+                color: white;
+                margin:0;
+                padding: 0px;
+                overflow: hidden;
+            }
+            canvas{
+                display: block;
+                margin: 0 auto;
+                cursor: pointer;
+            }
+            @font-face {
+                font-family: 'Dosis';
+                src: url('fonts/Dosis-Regular.ttf');
+            }
+            @font-face {
+                font-family: 'Dosis';
+                src: url('fonts/Dosis-Bold.ttf');
+                font-weight: bold;
+            }            
+        </style>
+    </head>
+    <body>                        
+        <div class="container">
+            <form id="tools" class="text-center">
+                <input type="button" class="btn btn-success" name="play" id="play" value="play" />
+            </form>
+        </div>
+        <canvas id="canvas"></canvas>                           
+        <script type="text/javascript" src="consts.js"></script>                        
+        <script type="text/javascript" src="roundrect.js"></script>                        
+        <script type="text/javascript" src="sound.js"></script>                        
+        <script type="text/javascript" src="grid.js"></script>                        
+        <script type="text/javascript" src="directions.js"></script>                        
+        <script type="text/javascript" src="loop.js"></script>                        
+        <script type="text/javascript" src="ghost.js"></script>                        
+        <script type="text/javascript" src="player.js"></script>                        
+        <script type="text/javascript" src="levels.js"></script>        
+        <script type="text/javascript" src="pacagain.js"></script>        
+        <script type="text/javascript" src="mapeditor.js"></script>        
+    </body>
+</html>

@@ -20,6 +20,7 @@ Be careful, may contain non-optimized and under-construction code. :'(
 ## Future features:
 * Spit fire/hadouken to kill ghosts
 * Bomber-man mashup: collect and drop bombs to break some tiles and open passages.
+* A map editor
 
 Adittional credits:
 * Soundtrack: CH Loops by Clinthammer (https://freesound.org/people/Clinthammer/packs/11343/)

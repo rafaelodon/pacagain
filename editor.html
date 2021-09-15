@@ -1,0 +1,116 @@
+<html>    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <style>
+        .cell{
+            display: inline-block;
+            height: 20px;
+            width: 20px;
+            border-right: 1px solid gray;            
+            border-bottom: 1px solid gray;            
+            background-color: black;
+            font-size: 0.5em;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .cell:hover{
+            cursor: pointer;
+        }        
+        .cell.fg{
+            background-color: red;
+        }
+    </style>    
+    <body>
+        <div class="container">
+            <form id="tools">
+                <input type="radio" class="btn-check" name="tool" id="bg" value="bg" autocomplete="off" checked>
+                <label class="btn btn-primary" for="bg">Empty</label>      
+
+                <input type="radio" class="btn-check" name="tool" id="fg" value="fg" autocomplete="off">
+                <label class="btn btn-primary" for="fg">Wall</label>
+
+                <input type="radio" class="btn-check" name="tool" id="dot" value="dot" autocomplete="off">
+                <label class="btn btn-primary" for="dot">Dot</label>
+            </form>
+        </div>
+        
+        <div class="row">
+            <div class="col">
+                <div id="map">            
+                </div>
+            </div>
+            <div class="col">                
+                <label for="output">Output:</label>
+                <textarea id="output"></textarea>                
+            </div>
+        </div>                
+    </body>    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="consts.js"></script>                        
+    <script type="text/javascript" src="roundrect.js"></script>                        
+    <script type="text/javascript" src="sound.js"></script>                        
+    <script type="text/javascript" src="grid.js"></script>                        
+    <script type="text/javascript" src="directions.js"></script>                        
+    <script type="text/javascript" src="loop.js"></script>                        
+    <script type="text/javascript" src="ghost.js"></script>                        
+    <script type="text/javascript" src="player.js"></script>                        
+    <script type="text/javascript" src="levels.js"></script>        
+    <script type="text/javascript" src="pacagain.js"></script> 
+    <script>        
+
+        var mouseDown = 0;
+
+        document.body.onmousedown = function() { 
+            ++mouseDown;
+        }
+
+        document.body.ondragstart = function() { 
+            ++mouseDown;
+        }
+
+        document.body.ondragend = function() {
+            mouseDown = 0;
+        }
+
+        document.body.onmouseup = function() {
+            mouseDown = 0;
+        }
+
+        var el_map = document.getElementById("map");
+        for(var row=0; row<26; row++){
+            var el_row = document.createElement("div");
+            el_map.appendChild(el_row);
+            for(var col=0; col<25; col++){            
+                var el_cell = document.createElement("canvas");
+                el_cell.id = row+"_"+col;
+                el_cell.className = "cell bg";                                                           
+                el_cell.ondragover = onEnterCell;
+                el_cell.onmouseenter = onEnterCell;
+                el_cell.onmouseleave = onEnterCell;
+                el_row.appendChild(el_cell);                
+            }
+        }
+
+        function onClickCell(event){
+            
+        }
+
+        function onEnterCell(event){
+            if(mouseDown){            
+                var el_cell = event.target;                
+                var tool = getCurrentTool();  
+                      
+                el_cell.className = "";
+                el_cell.classList.add("cell");                
+
+                if(tool == "fg"){
+                    Game.ctx = el_cell.getContext("2d");                    
+                    Game.drawPill(0, 0, "red", Game.ctx);                    
+                }
+            }
+        }
+
+        function getCurrentTool(){
+            return document.getElementById("tools").elements["tool"].value;
+        }
+    </script>
+</html>

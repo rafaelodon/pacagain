@@ -47,7 +47,8 @@ var Scenes = {
     GAME: 3,
     GAME_OVER: 4,
     LEVEL_COMPLETED: 5,
-    WIN: 6
+    WIN: 6,
+    MAP_EDITOR: -1
 }
 
 var OverlayType = {
@@ -60,4 +61,13 @@ var EasingType = {
     LINEAR: 0,
     EXP: 1,
     LOG: 2
+}
+
+var MapEditorTools = {
+    EMPTY: "empty",
+    WALL: "wall",
+    DOT: "dot",
+    PAC: "pac",
+    GHOST: "ghost",    
+    NIBBLE: "nibble"
 }
